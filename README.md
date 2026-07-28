@@ -3,8 +3,8 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-07**, including point-in-time analytics and a
-versioned equity-delivery cost engine. It has no production broker adapter and cannot place,
+The project has completed **WP-00 through WP-08**, including a versioned cost engine and
+append-only portfolio accounting. It has no production broker adapter and cannot place,
 modify, or cancel real-money orders.
 
 ## Requirements
@@ -145,7 +145,19 @@ The tracked charge configuration records its calculation version, verification d
 official sources. Estimates use `Decimal`, explicit paise rounding, one DP charge per sold
 scrip lifecycle, and base/1.5x/2.0x execution-cost scenarios. Rates can change; review the
 configuration against current broker and regulatory sources before any production use, and
-reconcile estimates against contract notes when accounting support is implemented.
+reconcile estimates against contract notes when actual charge data becomes available.
+
+## Portfolio accounting
+
+Migration `0002` adds deduplicated fills, position projections, an append-only cash journal,
+version-linked cost entries, and valuation snapshots. Broker fills atomically update cash and
+long-only positions; identical fill replays are no-ops, while conflicting duplicates and
+oversells fail closed. Corrections use explicit reversing or adjustment entries.
+
+Broker holdings, positions, and cash remain authoritative external snapshots. Local
+reconciliation reports differences without overwriting them. Corporate actions are not
+silently inferred: until a reviewed corporate-action processor is implemented, dividends use
+explicit journal entries and quantity/cost-basis changes require documented manual adjustments.
 
 ## Branch flow
 
@@ -161,7 +173,7 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - Live WebSocket market-data collection is not yet implemented.
-- Strategy, backtest, and cost-engine functionality belongs to later work packages.
+- Strategy, backtest, risk, and order-management functionality belongs to later work packages.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
