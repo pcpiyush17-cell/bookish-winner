@@ -1,0 +1,32 @@
+schema_version: 1
+name: conservative_10k
+capital_reference_inr: "10000.00"
+exposure:
+  max_gross_exposure_inr: "5000.00"
+  max_single_position_inr: "5000.00"
+  max_open_positions: 1
+  cash_reserve_inr: "1000.00"
+  allow_leverage: false
+  allow_short_positions: false
+  allowed_products: [CNC]
+  allowed_exchanges: [NSE]
+loss_limits:
+  max_loss_per_trade_inr: "75.00"
+  max_daily_realised_loss_inr: "100.00"
+  max_daily_total_loss_inr: "150.00"
+  max_monthly_drawdown_pct: "5.0"
+order_limits:
+  max_orders_per_day: 10
+  max_new_orders_per_minute: 2
+  max_modifications_per_order: 2
+  max_notional_per_order_inr: "5000.00"
+  duplicate_intent_window_seconds: 60
+  limit_order_only: true
+data_safety:
+  max_quote_age_seconds: 10
+  max_clock_skew_seconds: 2
+  require_bid_ask: true
+  reject_crossed_market: true
+edge:
+  min_edge_to_cost_ratio: "1.25"
+  min_net_edge_inr: "10.00"

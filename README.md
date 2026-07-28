@@ -3,8 +3,8 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-08**, including a versioned cost engine and
-append-only portfolio accounting. It has no production broker adapter and cannot place,
+The project has completed **WP-00 through WP-09**, including portfolio accounting and a
+fail-closed pre-trade risk engine. It has no production broker adapter and cannot place,
 modify, or cancel real-money orders.
 
 ## Requirements
@@ -159,6 +159,23 @@ reconciliation reports differences without overwriting them. Corporate actions a
 silently inferred: until a reviewed corporate-action processor is implemented, dividends use
 explicit journal entries and quantity/cost-basis changes require documented manual adjustments.
 
+## Risk engine and kill switch
+
+The conservative tracked risk configuration covers mode, live authorization, authentication,
+account/IP identity, universe, data freshness, market consistency, session, strategy, signal,
+duplicate intent, price/quantity, exposure, cash, loss, order-frequency, edge,
+reconciliation, incident, and kill-switch gates. Every decision stores its complete snapshot,
+configuration hash, approved quantity, and visible reason codes.
+
+```powershell
+uv run pq kill-switch-on --reason "operator safety stop"
+uv run pq kill-switch-status
+uv run pq kill-switch-reset --reconciled --confirm
+```
+
+The kill switch survives process restart. Reset requires both a healthy reconciliation and
+explicit human confirmation. Automated circuit breakers use the same persistent mechanism.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -173,9 +190,8 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - Live WebSocket market-data collection is not yet implemented.
-- Strategy, backtest, risk, and order-management functionality belongs to later work packages.
+- Strategy, backtest, and order-management functionality belongs to later work packages.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
-- Broker, data, storage, risk, accounting, and trading functionality belong to later work
-  packages.
+- Production OMS, live market-data collection, and trading orchestration remain unavailable.
 - Python support is intentionally restricted to the installed Python 3.11 series.
