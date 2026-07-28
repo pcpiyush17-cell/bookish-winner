@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-02**, including the bootstrap, shared-domain
-foundations, and SQLite storage. It contains no broker integration and cannot place, modify,
-or cancel orders.
+The project has completed **WP-00 through WP-03**, including the sandbox-only broker
+foundation. It has no production broker adapter and cannot place, modify, or cancel
+real-money orders.
 
 ## Requirements
 
@@ -76,6 +76,25 @@ and their checksums are recorded, so an already-applied migration cannot be edit
 Repository writes run in explicit transactions. Runtime sessions survive clean restart, and
 the foundational event log treats duplicate event IDs as harmless no-ops.
 
+## Broker mock and Kite sandbox
+
+Application code depends only on the broker-neutral protocol. `MockBroker` provides explicit,
+deterministic fills for tests. `SandboxKiteAdapter` is fixed to Kite's sandbox root and LIMIT
+orders; no production API root or production adapter exists.
+
+Copy the variable names from `.env.example` into your local secret-management workflow. Do
+not place values in the tracked example. To begin the human-mediated sandbox login flow:
+
+```powershell
+uv run pq kite-login
+uv run pq kite-login --exchange
+```
+
+The first command prints the sandbox login URL. Complete login and two-factor authentication
+in your browser. The second command prompts privately for the short-lived request token,
+verifies the expected sandbox user, and stores the access token under the Git-ignored `state/`
+directory. Browser credential automation is intentionally absent.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -89,8 +108,10 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Only the bootstrap CLI, shared domain contracts, configuration, and foundational SQLite
-  storage are implemented.
+- Only the bootstrap CLI, shared domain contracts, configuration, SQLite storage, mock broker,
+  and Kite sandbox adapter are implemented.
+- Sandbox support does not imply approval for live trading. Production authentication and
+  production order routing remain unavailable.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
   packages.
 - Python support is intentionally restricted to the installed Python 3.11 series.

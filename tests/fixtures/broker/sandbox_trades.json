@@ -1,0 +1,12 @@
+[
+  {
+    "trade_id": "20000001",
+    "order_id": "100000000000001",
+    "exchange": "NSE",
+    "tradingsymbol": "HDFCBANK",
+    "transaction_type": "BUY",
+    "quantity": 1,
+    "average_price": 1649.50,
+    "fill_timestamp": "2026-07-28 10:15:01"
+  }
+]
