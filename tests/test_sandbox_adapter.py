@@ -69,6 +69,9 @@ class FakeKiteClient:
     def holdings(self) -> list[dict[str, Any]]:
         return self.positions()["net"]
 
+    def instruments(self, exchange: str | None = None) -> list[dict[str, Any]]:
+        return []
+
     def orders(self) -> list[dict[str, Any]]:
         return cast(
             list[dict[str, Any]],

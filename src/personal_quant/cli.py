@@ -1,8 +1,10 @@
 """Command-line interface for explicit operator actions."""
 
 import os
+from datetime import date
 from pathlib import Path
 from typing import Annotated, NoReturn
+from zoneinfo import ZoneInfo
 
 import typer
 
@@ -12,9 +14,17 @@ from personal_quant.broker.auth import (
     SandboxAuthenticator,
     TokenStore,
 )
+from personal_quant.broker.contracts import BrokerError
 from personal_quant.broker.sandbox import create_sandbox_client
 from personal_quant.clocks import SystemClock
 from personal_quant.doctor import run_checks
+from personal_quant.instruments import (
+    InstrumentError,
+    InstrumentSnapshotStore,
+    SandboxKiteInstrumentSource,
+    download_instruments,
+)
+from personal_quant.market_calendar import CalendarError, MarketCalendar
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
 from personal_quant.storage.migrations import MigrationRunner
@@ -164,6 +174,75 @@ def kite_login(
     typer.echo(f"Session token stored at: {session.token_path}")
 
 
+@app.command("instruments-download")
+def instruments_download(
+    root: Annotated[Path, typer.Option("--root", help="Instrument snapshot root.")] = Path(
+        "data/reference/instruments"
+    ),
+    token_path: Annotated[Path, typer.Option("--token-path", help="Sandbox token file.")] = Path(
+        "state/session/sandbox_access_token.json"
+    ),
+) -> None:
+    """Download and persist today's validated NSE equity instrument snapshot."""
+    api_key = os.environ.get("KITE_SANDBOX_API_KEY")
+    if not api_key:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "sandbox_api_key_missing", "KITE_SANDBOX_API_KEY is not configured"
+            )
+        )
+    try:
+        token = TokenStore(token_path).load()
+        client = create_sandbox_client(api_key)
+        client.set_access_token(token.access_token)
+        now = SystemClock().now()
+        snapshot = download_instruments(
+            SandboxKiteInstrumentSource(client),
+            InstrumentSnapshotStore(root),
+            snapshot_date=now.astimezone(ZoneInfo("Asia/Kolkata")).date(),
+            downloaded_at=now,
+        )
+    except StorageError as error:
+        _storage_failure(error)
+    except (InstrumentError, BrokerError) as error:
+        _reference_failure(error)
+    typer.echo(f"Instrument snapshot ready: {snapshot.manifest.row_count} NSE equities")
+    typer.echo(f"SHA-256: {snapshot.manifest.checksum_sha256}")
+
+
+@app.command("instruments-validate")
+def instruments_validate(
+    directory: Annotated[Path, typer.Option("--directory", help="Dated snapshot directory.")],
+) -> None:
+    """Verify a stored instrument snapshot checksum and schema."""
+    try:
+        snapshot = InstrumentSnapshotStore(directory).load(directory)
+    except InstrumentError as error:
+        _reference_failure(error)
+    typer.echo(f"[PASS] Instrument snapshot: {snapshot.manifest.row_count} rows")
+    typer.echo(f"SHA-256: {snapshot.manifest.checksum_sha256}")
+
+
+@app.command("calendar-check")
+def calendar_check(
+    day: Annotated[str, typer.Option("--date", help="Date in YYYY-MM-DD format.")],
+    config: Annotated[Path, typer.Option("--config", help="Versioned calendar YAML.")] = Path(
+        "config/calendars/nse_equity_2026.yaml"
+    ),
+) -> None:
+    """Report whether an explicitly configured date is an NSE trading day."""
+    try:
+        query = date.fromisoformat(day)
+        calendar = MarketCalendar.load(config)
+        trading = calendar.is_trading_day(query)
+    except CalendarError as error:
+        _reference_failure(error)
+    except ValueError:
+        _reference_failure(CalendarError("calendar_date_invalid", "Date must use YYYY-MM-DD"))
+    state = "TRADING" if trading else "CLOSED"
+    typer.echo(f"{query.isoformat()}: {state} ({calendar.config.calendar_id})")
+
+
 def _storage_failure(error: StorageError) -> NoReturn:
     typer.echo(f"Storage error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
@@ -172,4 +251,9 @@ def _storage_failure(error: StorageError) -> NoReturn:
 def _broker_failure(error: BrokerAuthenticationError | StorageError) -> NoReturn:
     code = error.code
     typer.echo(f"Broker error [{code}]: {error}", err=True)
+    raise typer.Exit(code=1)
+
+
+def _reference_failure(error: InstrumentError | CalendarError | BrokerError) -> NoReturn:
+    typer.echo(f"Reference data error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
