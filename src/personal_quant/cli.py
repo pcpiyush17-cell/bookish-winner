@@ -1,11 +1,18 @@
 """Command-line interface for explicit operator actions."""
 
+import os
 from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
 
 from personal_quant import __version__
+from personal_quant.broker.auth import (
+    BrokerAuthenticationError,
+    SandboxAuthenticator,
+    TokenStore,
+)
+from personal_quant.broker.sandbox import create_sandbox_client
 from personal_quant.clocks import SystemClock
 from personal_quant.doctor import run_checks
 from personal_quant.storage.database import Database, StorageError
@@ -105,6 +112,64 @@ def backup(
     typer.echo(f"Backup created and verified: {created}")
 
 
+@app.command("kite-login")
+def kite_login(
+    exchange: Annotated[
+        bool,
+        typer.Option(
+            "--exchange",
+            help="Prompt for a request token and complete sandbox authentication.",
+        ),
+    ] = False,
+    token_path: Annotated[
+        Path,
+        typer.Option("--token-path", help="Restricted sandbox token file."),
+    ] = Path("state/session/sandbox_access_token.json"),
+) -> None:
+    """Perform human-mediated Kite sandbox login; production login is unavailable."""
+    api_key = os.environ.get("KITE_SANDBOX_API_KEY")
+    if not api_key:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "sandbox_api_key_missing", "KITE_SANDBOX_API_KEY is not configured"
+            )
+        )
+    client = create_sandbox_client(api_key)
+    authenticator = SandboxAuthenticator(client, SystemClock(), TokenStore(token_path))
+    typer.echo(f"Sandbox login URL: {authenticator.login_url()}")
+    typer.echo("Complete login and two-factor authentication in your browser.")
+    if not exchange:
+        typer.echo("Then rerun with --exchange to enter the short-lived request token.")
+        return
+
+    api_secret = os.environ.get("KITE_SANDBOX_API_SECRET")
+    expected_user = os.environ.get("KITE_SANDBOX_EXPECTED_USER_ID")
+    if not api_secret or not expected_user:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "sandbox_auth_config_missing",
+                "Sandbox API secret and expected user ID must be configured",
+            )
+        )
+    request_token = typer.prompt("Request token", hide_input=True)
+    try:
+        session = authenticator.exchange(
+            request_token=request_token,
+            api_secret=api_secret,
+            expected_user_id=expected_user,
+        )
+    except (BrokerAuthenticationError, StorageError) as error:
+        _broker_failure(error)
+    typer.echo(f"Sandbox authenticated for user: {session.profile.user_id}")
+    typer.echo(f"Session token stored at: {session.token_path}")
+
+
 def _storage_failure(error: StorageError) -> NoReturn:
     typer.echo(f"Storage error [{error.code}]: {error}", err=True)
+    raise typer.Exit(code=1)
+
+
+def _broker_failure(error: BrokerAuthenticationError | StorageError) -> NoReturn:
+    code = error.code
+    typer.echo(f"Broker error [{code}]: {error}", err=True)
     raise typer.Exit(code=1)

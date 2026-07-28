@@ -1,0 +1,17 @@
+[
+  {
+    "order_id": "100000000000001",
+    "status": "OPEN",
+    "exchange": "NSE",
+    "tradingsymbol": "HDFCBANK",
+    "transaction_type": "BUY",
+    "quantity": 2,
+    "filled_quantity": 1,
+    "pending_quantity": 1,
+    "price": 1650.25,
+    "average_price": 1649.50,
+    "order_timestamp": "2026-07-28 10:15:00",
+    "status_message": null,
+    "tag": "pqtest01"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "user_id": "SANDBOX01",
+  "user_name": "Sandbox User",
+  "email": "<redacted>",
+  "broker": "ZERODHA",
+  "exchanges": ["NSE"],
+  "products": ["CNC"],
+  "access_token": "<redacted>",
+  "api_secret": "<redacted>"
+}
