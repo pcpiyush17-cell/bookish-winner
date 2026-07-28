@@ -11,9 +11,11 @@ requires-python = ">=3.11,<3.12"
 license = { file = "LICENSE" }
 authors = [{ name = "Piyush Chandra" }]
 dependencies = [
+    "duckdb>=1.4,<2",
     "kiteconnect>=5.2.1,<6",
     "pydantic>=2.11,<3",
     "pyarrow>=21,<22",
+    "polars>=1.32,<2",
     "pyyaml>=6,<7",
     "typer>=0.16,<1",
     "tzdata>=2025.2",
