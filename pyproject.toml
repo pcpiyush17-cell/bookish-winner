@@ -13,6 +13,7 @@ authors = [{ name = "Piyush Chandra" }]
 dependencies = [
     "kiteconnect>=5.2.1,<6",
     "pydantic>=2.11,<3",
+    "pyarrow>=21,<22",
     "pyyaml>=6,<7",
     "typer>=0.16,<1",
     "tzdata>=2025.2",

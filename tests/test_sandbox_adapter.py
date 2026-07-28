@@ -72,6 +72,17 @@ class FakeKiteClient:
     def instruments(self, exchange: str | None = None) -> list[dict[str, Any]]:
         return []
 
+    def historical_data(
+        self,
+        instrument_token: int,
+        from_date: datetime | str,
+        to_date: datetime | str,
+        interval: str,
+        continuous: bool = False,
+        oi: bool = False,
+    ) -> list[dict[str, Any]]:
+        return []
+
     def orders(self) -> list[dict[str, Any]]:
         return cast(
             list[dict[str, Any]],
