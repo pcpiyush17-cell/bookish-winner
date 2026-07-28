@@ -3,8 +3,8 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-06**, including historical ingestion and a
-point-in-time-safe analytics layer. It has no production broker adapter and cannot place,
+The project has completed **WP-00 through WP-07**, including point-in-time analytics and a
+versioned equity-delivery cost engine. It has no production broker adapter and cannot place,
 modify, or cancel real-money orders.
 
 ## Requirements
@@ -132,6 +132,20 @@ definitions; materialized Parquet outputs have checksum-protected manifests.
 
 The no-lookahead and reproducibility rules are documented in
 [`docs/POINT_IN_TIME_ANALYTICS.md`](docs/POINT_IN_TIME_ANALYTICS.md).
+
+## Cost and break-even estimates
+
+```powershell
+uv run pq cost-estimate --quantity 100 --buy-price 100 --sell-price 110 `
+  --spread-bps 10 --slippage-bps 5
+uv run pq break-even --capital 100000 --variable-costs 100 --target-profit 1000
+```
+
+The tracked charge configuration records its calculation version, verification date, and
+official sources. Estimates use `Decimal`, explicit paise rounding, one DP charge per sold
+scrip lifecycle, and base/1.5x/2.0x execution-cost scenarios. Rates can change; review the
+configuration against current broker and regulatory sources before any production use, and
+reconcile estimates against contract notes when accounting support is implemented.
 
 ## Branch flow
 

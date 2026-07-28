@@ -1,0 +1,26 @@
+schema_version: 1
+calculation_version: zerodha_nse_delivery_2026-07-28_v1
+rounding_rule: half_up_to_paise_per_component
+provider: zerodha
+exchange: NSE
+asset_class: equity_delivery
+verified_on: 2026-07-28
+source_urls:
+  - https://zerodha.com/charges
+  - https://www.sebi.gov.in/web/?file=https%3A%2F%2Fwww.sebi.gov.in%2Fsebi_data%2Fattachdocs%2Fjan-2026%2F1767852346757.pdf
+rates:
+  brokerage_rate: "0"
+  stt_buy_rate: "0.001"
+  stt_sell_rate: "0.001"
+  exchange_transaction_rate: "0.0000307"
+  sebi_turnover_rate: "0.000001"
+  gst_rate: "0.18"
+  stamp_duty_buy_rate: "0.00015"
+  dp_charge_per_scrip_sell: "15.34"
+fixed_monthly:
+  kite_connect: "500.00"
+  static_ip: "0.00"
+  incremental_internet: "0.00"
+  backup_storage: "0.00"
+  paid_software: "0.00"
+  purchased_data: "0.00"
