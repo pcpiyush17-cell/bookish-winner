@@ -18,7 +18,7 @@ def test_migrations_are_idempotent_and_record_clock_time(tmp_path: Path) -> None
     current = datetime(2026, 7, 28, 10, 0, tzinfo=UTC)
     runner = MigrationRunner(database, clock=SimulatedClock(current))
 
-    assert runner.apply_all() == (1, 2)
+    assert runner.apply_all() == (1, 2, 3)
     assert runner.apply_all() == ()
 
     connection = database.connect(read_only=True)

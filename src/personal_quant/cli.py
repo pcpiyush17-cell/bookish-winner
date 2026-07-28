@@ -35,6 +35,7 @@ from personal_quant.instruments import (
     download_instruments,
 )
 from personal_quant.market_calendar import CalendarError, MarketCalendar
+from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
 from personal_quant.storage.migrations import MigrationRunner
@@ -366,6 +367,57 @@ def break_even(
     typer.echo(f"Calculation version: {report.calculation_version}")
 
 
+@app.command("kill-switch-on")
+def kill_switch_on(
+    reason: Annotated[str, typer.Option("--reason", help="Operator-visible activation reason.")],
+    path: Annotated[Path, typer.Option("--path", help="SQLite database path.")] = Path(
+        "state/trading.sqlite"
+    ),
+) -> None:
+    """Persistently prevent new order approvals."""
+    try:
+        activated = KillSwitch(Database(path)).activate(reason, SystemClock().now())
+    except (RiskError, StorageError) as error:
+        _risk_failure(error)
+    typer.echo("Kill switch activated." if activated else "Kill switch was already active.")
+
+
+@app.command("kill-switch-status")
+def kill_switch_status(
+    path: Annotated[Path, typer.Option("--path", help="SQLite database path.")] = Path(
+        "state/trading.sqlite"
+    ),
+) -> None:
+    """Read persistent kill-switch state."""
+    try:
+        active = KillSwitch(Database(path)).active()
+    except StorageError as error:
+        _risk_failure(error)
+    typer.echo("ACTIVE" if active else "INACTIVE")
+
+
+@app.command("kill-switch-reset")
+def kill_switch_reset(
+    reconciled: Annotated[
+        bool, typer.Option("--reconciled", help="Confirm reconciliation.")
+    ] = False,
+    confirm: Annotated[
+        bool, typer.Option("--confirm", help="Explicit human confirmation.")
+    ] = False,
+    path: Annotated[Path, typer.Option("--path", help="SQLite database path.")] = Path(
+        "state/trading.sqlite"
+    ),
+) -> None:
+    """Reset only after reconciliation and explicit human confirmation."""
+    try:
+        KillSwitch(Database(path)).reset(
+            SystemClock().now(), reconciliation_healthy=reconciled, human_authorised=confirm
+        )
+    except (RiskError, StorageError) as error:
+        _risk_failure(error)
+    typer.echo("Kill switch reset.")
+
+
 def _storage_failure(error: StorageError) -> NoReturn:
     typer.echo(f"Storage error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
@@ -392,3 +444,8 @@ def _parse_decimal(value: str) -> Decimal:
     if not parsed.is_finite():
         raise CostError("cost_number_invalid", "Cost inputs must be finite decimal numbers")
     return parsed
+
+
+def _risk_failure(error: RiskError | StorageError) -> NoReturn:
+    typer.echo(f"Risk error [{error.code}]: {error}", err=True)
+    raise typer.Exit(code=1)
