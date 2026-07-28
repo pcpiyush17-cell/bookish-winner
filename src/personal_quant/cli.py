@@ -2,6 +2,7 @@
 
 import os
 from datetime import date, datetime, time
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Annotated, NoReturn
 from zoneinfo import ZoneInfo
@@ -17,6 +18,7 @@ from personal_quant.broker.auth import (
 from personal_quant.broker.contracts import BrokerError
 from personal_quant.broker.sandbox import create_sandbox_client
 from personal_quant.clocks import SystemClock
+from personal_quant.costs import CostConfig, CostEngine, CostError, DeliveryTrade
 from personal_quant.doctor import run_checks
 from personal_quant.domain.identifiers import InstrumentKey
 from personal_quant.historical import (
@@ -308,6 +310,62 @@ def historical_download(
     typer.echo(f"Manifest: {result.manifest_path}")
 
 
+@app.command("cost-estimate")
+def cost_estimate(
+    quantity: Annotated[int, typer.Option("--quantity", min=1)],
+    buy_price: Annotated[str, typer.Option("--buy-price")],
+    sell_price: Annotated[str, typer.Option("--sell-price")],
+    spread_bps: Annotated[str, typer.Option("--spread-bps")] = "0",
+    slippage_bps: Annotated[str, typer.Option("--slippage-bps")] = "0",
+    impact_bps: Annotated[str, typer.Option("--impact-bps")] = "0",
+    config: Annotated[Path, typer.Option("--config", help="Versioned charge YAML.")] = Path(
+        "config/costs/zerodha_nse_delivery_2026-07-28.yaml"
+    ),
+) -> None:
+    """Estimate delivery costs under base, 1.5x, and 2.0x execution scenarios."""
+    try:
+        trade = DeliveryTrade(
+            quantity,
+            _parse_decimal(buy_price),
+            _parse_decimal(sell_price),
+            _parse_decimal(spread_bps),
+            _parse_decimal(slippage_bps),
+            _parse_decimal(impact_bps),
+        )
+        scenarios = CostEngine(CostConfig.load(config)).stress_scenarios(trade)
+    except CostError as error:
+        _reference_failure(error)
+    for name, result in scenarios.items():
+        typer.echo(
+            f"{name}: costs=INR {result.variable_total} "
+            f"gross=INR {result.gross_pnl} net=INR {result.trading_net_pnl}"
+        )
+    typer.echo(f"Calculation version: {scenarios['base'].calculation_version}")
+
+
+@app.command("break-even")
+def break_even(
+    capital: Annotated[str, typer.Option("--capital")],
+    variable_costs: Annotated[str, typer.Option("--variable-costs")],
+    target_profit: Annotated[str, typer.Option("--target-profit")] = "0",
+    config: Annotated[Path, typer.Option("--config", help="Versioned charge YAML.")] = Path(
+        "config/costs/zerodha_nse_delivery_2026-07-28.yaml"
+    ),
+) -> None:
+    """Calculate monthly gross break-even requirements."""
+    try:
+        report = CostEngine(CostConfig.load(config)).break_even(
+            starting_capital=_parse_decimal(capital),
+            expected_variable_costs=_parse_decimal(variable_costs),
+            target_net_profit=_parse_decimal(target_profit),
+        )
+    except CostError as error:
+        _reference_failure(error)
+    typer.echo(f"Break-even: INR {report.break_even_rupees}")
+    typer.echo(f"Required monthly gross return: {report.required_monthly_gross_return_pct}%")
+    typer.echo(f"Calculation version: {report.calculation_version}")
+
+
 def _storage_failure(error: StorageError) -> NoReturn:
     typer.echo(f"Storage error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
@@ -320,7 +378,17 @@ def _broker_failure(error: BrokerAuthenticationError | StorageError) -> NoReturn
 
 
 def _reference_failure(
-    error: InstrumentError | CalendarError | HistoricalDataError | BrokerError,
+    error: InstrumentError | CalendarError | HistoricalDataError | CostError | BrokerError,
 ) -> NoReturn:
     typer.echo(f"Reference data error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
+
+
+def _parse_decimal(value: str) -> Decimal:
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation as error:
+        raise CostError("cost_number_invalid", "Cost inputs must be decimal numbers") from error
+    if not parsed.is_finite():
+        raise CostError("cost_number_invalid", "Cost inputs must be finite decimal numbers")
+    return parsed
