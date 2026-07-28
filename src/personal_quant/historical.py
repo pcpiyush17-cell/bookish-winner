@@ -162,6 +162,7 @@ class HistoricalIngestor:
             invalid.append({"row": -1, "rule": "duplicate_candle", "message": "Duplicate keys"})
         gaps = _find_gaps(request, candles, self.calendar)
         if invalid:
+            curated_path: Path | None = None
             quarantine = (
                 self.root
                 / "quarantine"
@@ -204,6 +205,8 @@ class HistoricalIngestor:
             "request": _request_record(request),
             "raw_path": str(raw_path),
             "raw_checksum_sha256": _checksum(raw_path),
+            "curated_path": str(curated_path) if curated_path else None,
+            "curated_checksum_sha256": _checksum(curated_path) if curated_path else None,
             "raw_rows": len(raw_rows),
             "curated_rows": curated_rows,
             "invalid_rows": len(invalid),

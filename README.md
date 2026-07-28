@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-05**, including immutable instrument-master
-snapshots, a versioned NSE market calendar, and historical candle ingestion. It has no
-production broker adapter and cannot place, modify, or cancel real-money orders.
+The project has completed **WP-00 through WP-06**, including historical ingestion and a
+point-in-time-safe analytics layer. It has no production broker adapter and cannot place,
+modify, or cancel real-money orders.
 
 ## Requirements
 
@@ -123,6 +123,16 @@ existing manifest without another broker call. Raw and curated data are separate
 Parquet layers; malformed batches are quarantined, and gaps are reported without forward
 filling. Runtime market datasets remain excluded from Git.
 
+## Analytics and features
+
+`VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
+`as_of` cutoff. It provides lazy Polars scans and an in-memory, read-only DuckDB query
+context. The feature registry includes versioned one-bar return and three-bar moving-average
+definitions; materialized Parquet outputs have checksum-protected manifests.
+
+The no-lookahead and reproducibility rules are documented in
+[`docs/POINT_IN_TIME_ANALYTICS.md`](docs/POINT_IN_TIME_ANALYTICS.md).
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -137,6 +147,7 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - Live WebSocket market-data collection is not yet implemented.
+- Strategy, backtest, and cost-engine functionality belongs to later work packages.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
