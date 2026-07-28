@@ -1,11 +1,16 @@
 """Command-line interface for explicit operator actions."""
 
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, NoReturn
 
 import typer
 
 from personal_quant import __version__
+from personal_quant.clocks import SystemClock
 from personal_quant.doctor import run_checks
+from personal_quant.storage.database import Database, StorageError
+from personal_quant.storage.maintenance import timestamped_backup_path
+from personal_quant.storage.migrations import MigrationRunner
 
 app = typer.Typer(
     name="pq",
@@ -43,3 +48,63 @@ def doctor() -> None:
         raise typer.Exit(code=1)
 
     typer.echo("Environment is ready for local development.")
+
+
+@app.command("init-db")
+def init_db(
+    path: Annotated[
+        Path,
+        typer.Option("--path", help="SQLite database path."),
+    ] = Path("state/trading.sqlite"),
+) -> None:
+    """Initialize or safely migrate the operational database."""
+    try:
+        applied = MigrationRunner(Database(path)).apply_all()
+    except StorageError as error:
+        _storage_failure(error)
+    versions = ", ".join(f"{version:04d}" for version in applied) if applied else "none"
+    typer.echo(f"Database ready: {path}")
+    typer.echo(f"Migrations applied: {versions}")
+
+
+@app.command("db-check")
+def db_check(
+    path: Annotated[
+        Path,
+        typer.Option("--path", help="SQLite database path."),
+    ] = Path("state/trading.sqlite"),
+) -> None:
+    """Run SQLite's full integrity check without modifying the database."""
+    try:
+        result = Database(path).integrity_check()
+    except StorageError as error:
+        _storage_failure(error)
+    if not result.passed:
+        typer.echo(f"[FAIL] Database integrity: {'; '.join(result.messages)}", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"[PASS] Database integrity: {path}")
+
+
+@app.command()
+def backup(
+    path: Annotated[
+        Path,
+        typer.Option("--path", help="SQLite database path."),
+    ] = Path("state/trading.sqlite"),
+    destination: Annotated[
+        Path | None,
+        typer.Option("--destination", help="Exact non-existing backup path."),
+    ] = None,
+) -> None:
+    """Create an online SQLite backup and verify its integrity."""
+    target = destination or timestamped_backup_path(path, Path("backups"), SystemClock())
+    try:
+        created = Database(path).backup(target)
+    except StorageError as error:
+        _storage_failure(error)
+    typer.echo(f"Backup created and verified: {created}")
+
+
+def _storage_failure(error: StorageError) -> NoReturn:
+    typer.echo(f"Storage error [{error.code}]: {error}", err=True)
+    raise typer.Exit(code=1)
