@@ -67,3 +67,23 @@ def test_instrument_download_requires_api_key(monkeypatch: pytest.MonkeyPatch) -
     result = runner.invoke(app, ["instruments-download"])
     assert result.exit_code == 1
     assert "sandbox_api_key_missing" in result.stderr
+
+
+def test_historical_download_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KITE_SANDBOX_API_KEY", raising=False)
+    result = runner.invoke(
+        app,
+        [
+            "historical-download",
+            "--instrument",
+            "NSE:INFY",
+            "--start",
+            "2026-01-01",
+            "--end",
+            "2026-01-02",
+            "--snapshot",
+            "missing",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "sandbox_api_key_missing" in result.stderr

@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-04**, including immutable instrument-master
-snapshots and a versioned NSE market calendar. It has no production broker adapter and
-cannot place, modify, or cancel real-money orders.
+The project has completed **WP-00 through WP-05**, including immutable instrument-master
+snapshots, a versioned NSE market calendar, and historical candle ingestion. It has no
+production broker adapter and cannot place, modify, or cancel real-money orders.
 
 ## Requirements
 
@@ -111,6 +111,18 @@ The tracked 2026 NSE calendar records its verification date and official sources
 holidays and session windows are explicit. The announced Diwali Muhurat session remains
 closed until NSE publishes its exact timings. Missing market data never infers a holiday.
 
+## Historical candle ingestion
+
+```powershell
+uv run pq historical-download --instrument NSE:INFY --start 2026-01-01 --end 2026-07-28 `
+  --interval day --snapshot data/reference/instruments/provider=zerodha/date=YYYY-MM-DD
+```
+
+The downloader is limited to two historical requests per second. Exact reruns reuse the
+existing manifest without another broker call. Raw and curated data are separate immutable
+Parquet layers; malformed batches are quarantined, and gaps are reported without forward
+filling. Runtime market datasets remain excluded from Git.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -124,7 +136,7 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Market-data ingestion beyond the daily instrument master is not yet implemented.
+- Live WebSocket market-data collection is not yet implemented.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work

@@ -59,6 +59,16 @@ class KiteClient(Protocol):
 
     def instruments(self, exchange: str | None = None) -> list[dict[str, Any]]: ...
 
+    def historical_data(
+        self,
+        instrument_token: int,
+        from_date: datetime | str,
+        to_date: datetime | str,
+        interval: str,
+        continuous: bool = False,
+        oi: bool = False,
+    ) -> list[dict[str, Any]]: ...
+
     def place_order(self, **parameters: object) -> str: ...
 
     def modify_order(self, **parameters: object) -> str: ...

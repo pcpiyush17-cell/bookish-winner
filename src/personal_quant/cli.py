@@ -1,7 +1,7 @@
 """Command-line interface for explicit operator actions."""
 
 import os
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Annotated, NoReturn
 from zoneinfo import ZoneInfo
@@ -18,6 +18,14 @@ from personal_quant.broker.contracts import BrokerError
 from personal_quant.broker.sandbox import create_sandbox_client
 from personal_quant.clocks import SystemClock
 from personal_quant.doctor import run_checks
+from personal_quant.domain.identifiers import InstrumentKey
+from personal_quant.historical import (
+    HistoricalDataError,
+    HistoricalIngestor,
+    HistoricalRateLimiter,
+    HistoricalRequest,
+    KiteHistoricalSource,
+)
 from personal_quant.instruments import (
     InstrumentError,
     InstrumentSnapshotStore,
@@ -243,6 +251,63 @@ def calendar_check(
     typer.echo(f"{query.isoformat()}: {state} ({calendar.config.calendar_id})")
 
 
+@app.command("historical-download")
+def historical_download(
+    instrument: Annotated[str, typer.Option("--instrument", help="Durable NSE:SYMBOL key.")],
+    start: Annotated[str, typer.Option("--start", help="Inclusive ISO date.")],
+    end: Annotated[str, typer.Option("--end", help="Inclusive ISO date.")],
+    snapshot: Annotated[Path, typer.Option("--snapshot", help="Dated instrument directory.")],
+    interval: Annotated[str, typer.Option("--interval", help="day or 15minute.")] = "day",
+    root: Annotated[Path, typer.Option("--root", help="Historical data root.")] = Path("data"),
+    token_path: Annotated[Path, typer.Option("--token-path", help="Sandbox token file.")] = Path(
+        "state/session/sandbox_access_token.json"
+    ),
+    calendar_path: Annotated[Path, typer.Option("--calendar", help="Market calendar YAML.")] = Path(
+        "config/calendars/nse_equity_2026.yaml"
+    ),
+) -> None:
+    """Download one idempotent, validated historical candle batch."""
+    api_key = os.environ.get("KITE_SANDBOX_API_KEY")
+    if not api_key:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "sandbox_api_key_missing", "KITE_SANDBOX_API_KEY is not configured"
+            )
+        )
+    try:
+        zone = ZoneInfo("Asia/Kolkata")
+        start_at = datetime.combine(date.fromisoformat(start), time.min, zone)
+        end_at = datetime.combine(date.fromisoformat(end), time.max, zone)
+        stored = TokenStore(token_path).load()
+        client = create_sandbox_client(api_key)
+        client.set_access_token(stored.access_token)
+        master = InstrumentSnapshotStore(snapshot).load(snapshot)
+        key = InstrumentKey(instrument)
+        request = HistoricalRequest(key, master.resolve_token(key), interval, start_at, end_at)
+        clock = SystemClock()
+        result = HistoricalIngestor(
+            KiteHistoricalSource(client),
+            HistoricalRateLimiter(clock),
+            MarketCalendar.load(calendar_path),
+            root,
+            clock,
+        ).ingest(request)
+    except StorageError as error:
+        _storage_failure(error)
+    except (InstrumentError, CalendarError, HistoricalDataError, BrokerError) as error:
+        _reference_failure(error)
+    except ValueError:
+        _reference_failure(
+            HistoricalDataError("historical_date_invalid", "Dates must use YYYY-MM-DD")
+        )
+    typer.echo(f"Historical batch: {result.status}")
+    typer.echo(
+        f"Raw={result.raw_rows} Curated={result.curated_rows} "
+        f"Invalid={result.invalid_rows} Gaps={len(result.gaps)}"
+    )
+    typer.echo(f"Manifest: {result.manifest_path}")
+
+
 def _storage_failure(error: StorageError) -> NoReturn:
     typer.echo(f"Storage error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
@@ -254,6 +319,8 @@ def _broker_failure(error: BrokerAuthenticationError | StorageError) -> NoReturn
     raise typer.Exit(code=1)
 
 
-def _reference_failure(error: InstrumentError | CalendarError | BrokerError) -> NoReturn:
+def _reference_failure(
+    error: InstrumentError | CalendarError | HistoricalDataError | BrokerError,
+) -> NoReturn:
     typer.echo(f"Reference data error [{error.code}]: {error}", err=True)
     raise typer.Exit(code=1)
