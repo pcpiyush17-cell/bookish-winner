@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "personal-quant"
+version = "0.1.0"
+description = "A safe, auditable, local-first personal quant trading system."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Piyush Chandra" }]
+dependencies = [
+    "typer>=0.16,<1",
+]
+
+[project.scripts]
+pq = "personal_quant.cli:app"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17,<2",
+    "pre-commit>=4.2,<5",
+    "pytest>=8.4,<9",
+    "pytest-cov>=6.2,<7",
+    "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/personal_quant"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --cov=personal_quant --cov-report=term-missing --cov-fail-under=90"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests"]
+
