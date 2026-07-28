@@ -1,0 +1,38 @@
+schema_version: 1
+calendar_id: nse_equity_2026_v1
+exchange: NSE
+segment: equity
+timezone: Asia/Kolkata
+year: 2026
+verified_on: 2026-07-28
+source_urls:
+  - https://www.nseindia.com/resources/exchange-communication-holidays
+  - https://nsearchives.nseindia.com/content/circulars/FAOP71777.pdf
+regular_session:
+  pre_open_start: "09:00:00"
+  market_open: "09:15:00"
+  strategy_start: "09:20:00"
+  strategy_end: "15:15:00"
+  market_close: "15:30:00"
+  post_close_end: "16:00:00"
+holidays:
+  - 2026-01-26
+  - 2026-03-03
+  - 2026-03-26
+  - 2026-03-31
+  - 2026-04-03
+  - 2026-04-14
+  - 2026-05-01
+  - 2026-05-28
+  - 2026-06-26
+  - 2026-09-14
+  - 2026-10-02
+  - 2026-10-20
+  - 2026-11-10
+  - 2026-11-24
+  - 2026-12-25
+special_sessions:
+  - session_date: 2026-11-08
+    name: Diwali Laxmi Pujan Muhurat Trading
+    status: pending_timing
+    times: null

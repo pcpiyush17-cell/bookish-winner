@@ -26,6 +26,13 @@ class SandboxSession:
 
 
 @dataclass(frozen=True, slots=True)
+class StoredToken:
+    access_token: str
+    user_id: str
+    authenticated_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class TokenStore:
     path: Path
 
@@ -49,6 +56,23 @@ class TokenStore:
                 "token_store_failed", "Could not store sandbox session token"
             ) from error
         return target
+
+    def load(self) -> StoredToken:
+        """Load a stored token without displaying or logging its value."""
+        target = self.path.expanduser().resolve()
+        try:
+            raw = json.loads(target.read_text(encoding="utf-8"))
+            if not isinstance(raw, dict):
+                raise ValueError
+            return StoredToken(
+                access_token=_required_string(raw, "access_token"),
+                user_id=_required_string(raw, "user_id"),
+                authenticated_at=_required_string(raw, "authenticated_at"),
+            )
+        except (OSError, ValueError, json.JSONDecodeError, BrokerAuthenticationError):
+            raise StorageError(
+                "token_load_failed", "Could not load a valid sandbox session token"
+            ) from None
 
 
 @dataclass(frozen=True, slots=True)

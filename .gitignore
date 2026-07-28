@@ -20,6 +20,7 @@ backups/
 mlruns/
 data/raw/
 data/curated/
+data/reference/
 *.sqlite
 *.sqlite3
 *.duckdb

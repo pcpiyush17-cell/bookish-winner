@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-03**, including the sandbox-only broker
-foundation. It has no production broker adapter and cannot place, modify, or cancel
-real-money orders.
+The project has completed **WP-00 through WP-04**, including immutable instrument-master
+snapshots and a versioned NSE market calendar. It has no production broker adapter and
+cannot place, modify, or cancel real-money orders.
 
 ## Requirements
 
@@ -95,6 +95,22 @@ in your browser. The second command prompts privately for the short-lived reques
 verifies the expected sandbox user, and stores the access token under the Git-ignored `state/`
 directory. Browser credential automation is intentionally absent.
 
+## Instrument master and market calendar
+
+```powershell
+uv run pq instruments-download
+uv run pq instruments-validate --directory data/reference/instruments/provider=zerodha/date=YYYY-MM-DD
+uv run pq calendar-check --date 2026-10-02
+```
+
+Snapshots are normalized, checksum-protected, and immutable within a date. Lookups use
+durable keys such as `NSE:INFY`; broker tokens remain dated reference data and may change.
+Local snapshots stay under the Git-ignored `data/reference/` directory.
+
+The tracked 2026 NSE calendar records its verification date and official sources. Published
+holidays and session windows are explicit. The announced Diwali Muhurat session remains
+closed until NSE publishes its exact timings. Missing market data never infers a holiday.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -108,8 +124,7 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Only the bootstrap CLI, shared domain contracts, configuration, SQLite storage, mock broker,
-  and Kite sandbox adapter are implemented.
+- Market-data ingestion beyond the daily instrument master is not yet implemented.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
