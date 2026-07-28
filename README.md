@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00: Project bootstrap** and is implementing **WP-01: Domain
-types, clock, and configuration**. It contains no broker integration and cannot place,
-modify, or cancel orders.
+The project has completed **WP-00 through WP-02**, including the bootstrap, shared-domain
+foundations, and SQLite storage. It contains no broker integration and cannot place, modify,
+or cancel orders.
 
 ## Requirements
 
@@ -58,6 +58,24 @@ Domain code uses `Money` for minor-unit monetary values and injected `Clock` imp
 for time. Floats are rejected by `Money`, and application logic must receive a clock instead
 of calling the wall clock directly.
 
+## Operational database
+
+Initialize or migrate the local SQLite database:
+
+```powershell
+uv run pq init-db
+uv run pq db-check
+uv run pq backup
+```
+
+The default database is `state/trading.sqlite`; verified online backups go to `backups/`.
+Both locations are excluded from Git. SQLite connections use WAL mode, `synchronous=FULL`,
+foreign-key enforcement, and a five-second busy timeout. Migrations are numbered SQL files
+and their checksums are recorded, so an already-applied migration cannot be edited silently.
+
+Repository writes run in explicit transactions. Runtime sessions survive clean restart, and
+the foundational event log treats duplicate event IDs as harmless no-ops.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -71,8 +89,8 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Only the bootstrap CLI, shared WP-01 domain contracts, clocks, and configuration are
-  implemented.
+- Only the bootstrap CLI, shared domain contracts, configuration, and foundational SQLite
+  storage are implemented.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
   packages.
 - Python support is intentionally restricted to the installed Python 3.11 series.
