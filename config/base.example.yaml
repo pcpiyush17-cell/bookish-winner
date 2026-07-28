@@ -1,0 +1,31 @@
+schema_version: 1
+
+application:
+  name: personal-quant
+  timezone: Asia/Kolkata
+  log_level: INFO
+  data_root: ./data
+  state_root: ./state
+  report_root: ./reports
+
+broker:
+  provider: zerodha
+  api_key_env: KITE_API_KEY
+  api_secret_env: KITE_API_SECRET
+  expected_user_id_env: KITE_EXPECTED_USER_ID
+  access_token_path: ./state/session/access_token.json
+  static_ip_required_for_orders: true
+  expected_public_ip_env: KITE_REGISTERED_PUBLIC_IP
+
+market:
+  exchange: NSE
+  segment: equity
+  product: CNC
+  currency: INR
+
+runtime:
+  mode: paper
+  heartbeat_interval_seconds: 5
+  stale_market_data_seconds: 15
+  graceful_shutdown_seconds: 20
+  lock_file: ./state/locks/trading_engine.lock

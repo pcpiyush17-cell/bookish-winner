@@ -11,7 +11,10 @@ requires-python = ">=3.11,<3.12"
 license = { file = "LICENSE" }
 authors = [{ name = "Piyush Chandra" }]
 dependencies = [
+    "pydantic>=2.11,<3",
+    "pyyaml>=6,<7",
     "typer>=0.16,<1",
+    "tzdata>=2025.2",
 ]
 
 [project.scripts]
@@ -19,11 +22,13 @@ pq = "personal_quant.cli:app"
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.138,<7",
     "mypy>=1.17,<2",
     "pre-commit>=4.2,<5",
     "pytest>=8.4,<9",
     "pytest-cov>=6.2,<7",
     "ruff>=0.12,<1",
+    "types-pyyaml>=6.0.12.20250516",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -53,4 +58,3 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.11"
 strict = true
 files = ["src", "tests"]
-

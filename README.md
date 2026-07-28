@@ -3,8 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project is currently at **WP-00: Project bootstrap**. It contains no broker integration
-and cannot place, modify, or cancel orders.
+The project has completed **WP-00: Project bootstrap** and is implementing **WP-01: Domain
+types, clock, and configuration**. It contains no broker integration and cannot place,
+modify, or cancel orders.
 
 ## Requirements
 
@@ -43,6 +44,20 @@ Run every check with:
 uv run pre-commit run --all-files
 ```
 
+## Configuration
+
+[`config/base.example.yaml`](config/base.example.yaml) documents every current application
+setting. Configuration models are immutable and strict: missing values, type coercion, and
+unknown fields fail validation. Broker secrets are not configuration values; only the names
+of environment variables that will hold those secrets are recorded.
+
+Validated configuration exposes a deterministic SHA-256 fingerprint for run auditing. The
+fingerprint is unaffected by YAML key ordering.
+
+Domain code uses `Money` for minor-unit monetary values and injected `Clock` implementations
+for time. Floats are rejected by `Money`, and application logic must receive a clock instead
+of calling the wall clock directly.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -56,7 +71,8 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Only the bootstrap CLI and environment diagnostics are implemented.
+- Only the bootstrap CLI, shared WP-01 domain contracts, clocks, and configuration are
+  implemented.
 - Broker, data, storage, risk, accounting, and trading functionality belong to later work
   packages.
 - Python support is intentionally restricted to the installed Python 3.11 series.
