@@ -1,0 +1,19 @@
+schema_version: 1
+provider: zerodha
+mode: quote
+approved_instruments:
+  "408065": NSE:INFY
+heartbeat_timeout_seconds: 10
+maximum_quote_age_seconds: 15
+reconnect:
+  initial_delay_seconds: 1
+  maximum_delay_seconds: 30
+  maximum_attempts: 8
+recording:
+  format: parquet
+  immutable: true
+  checksum: sha256
+trading_gate:
+  require_connected: true
+  require_complete_subscription: true
+  require_fresh_quote_for_every_instrument: true
