@@ -1,0 +1,8 @@
+mode: shadow
+broker_access: read_only
+report_root: state/reports/shadow
+transmission_available: false
+
+# Shadow mode remains operationally gated on WP-14 paper evidence:
+# 10 clean dry sessions followed by 30 clean formal paper sessions.
+paper_gate_required: true
