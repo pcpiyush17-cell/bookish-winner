@@ -23,6 +23,7 @@ class InstrumentClient(FakeKiteClient):
 class MixedInstrumentClient(FakeKiteClient):
     def instruments(self, exchange: str | None = None) -> list[dict[str, Any]]:
         equity = row()
+        equity["name"] = ""
         index = row(token=2002, symbol="NIFTY 50")
         index["instrument_type"] = "INDICES"
         return [equity, index]
@@ -142,6 +143,7 @@ def test_production_instrument_download_filters_non_equity_nse_rows(
     directories = tuple((root / "provider=zerodha").iterdir())
     snapshot = InstrumentSnapshotStore(root).load(directories[0])
     assert tuple(str(item.key) for item in snapshot.instruments) == ("NSE:INFY",)
+    assert snapshot.instruments[0].name == "INFY"
 
 
 def test_production_instrument_download_rejects_token_identity_mismatch(
