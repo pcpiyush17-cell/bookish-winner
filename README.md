@@ -3,11 +3,12 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-13**, including portfolio accounting, a
+The project has completed **WP-00 through WP-13** and the **WP-14 runtime foundation**,
+including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
 collection. It has no production broker adapter and cannot place, modify, or cancel real-money
-orders.
+orders. WP-14 operational acceptance remains pending real session evidence.
 
 ## Requirements
 
@@ -238,6 +239,21 @@ preserving the identical event stream. Initial assumptions are in
 [`config/live_data.example.yaml`](config/live_data.example.yaml), with recovery steps in the
 [`WebSocket reconnect runbook`](docs/runbooks/WEBSOCKET_RECONNECT.md).
 
+## Paper runtime foundation
+
+The paper runtime composes calendar scheduling, feed health, the baseline strategy, persistent
+risk decisions, OMS, paper execution, and portfolio accounting behind explicit lifecycle
+states. Pre-flight holds a PID/session lock and checks provenance, disk, database integrity,
+authentication/account facts, instrument and calendar readiness, fresh feed state, kill switch,
+reconciliation, and open-order recovery before enabling evaluation.
+
+Every session persists lifecycle evidence and state snapshots. Graceful shutdown stops new
+work, handles open orders, reconciles, writes an immutable daily capital/P&L/order report, and
+releases the lock. Unfinished sessions are marked interrupted on recovery. Formal evidence is
+locked until ten clean dry sessions exist, and only clean reconciled sessions without an active
+kill switch count. See [`config/paper_runtime.example.yaml`](config/paper_runtime.example.yaml)
+and the [`paper session evidence protocol`](docs/PAPER_SESSION_PROTOCOL.md).
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -255,6 +271,8 @@ excluded by `.gitignore`.
   tested collector contract, health gates, recording, and replay engine.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
+- The WP-14 requirement for ten dry sessions followed by thirty formal paper sessions has not
+  yet been completed; the foundation records and enforces that evidence sequence.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Production broker routing, live market-data collection, and trading orchestration remain
