@@ -3,9 +3,10 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-10**, including portfolio accounting, a
-fail-closed pre-trade risk engine, and a persistent paper-trading OMS. It has no production
-broker adapter and cannot place, modify, or cancel real-money orders.
+The project has completed **WP-00 through WP-11**, including portfolio accounting, a
+fail-closed pre-trade risk engine, a persistent paper-trading OMS, and a deterministic
+event-driven backtester. It has no production broker adapter and cannot place, modify, or
+cancel real-money orders.
 
 ## Requirements
 
@@ -188,6 +189,20 @@ by deterministic golden scenarios.
 `PaperBroker` fills eligible limit orders only on a later bar whose range touches the limit.
 Its fill quantity is capped by configured bar-volume participation, making the execution
 assumption explicit and reproducible.
+
+## Event-driven backtesting
+
+The backtester consumes timestamp-ordered market events through an injected simulated clock.
+Strategy-neutral signal callbacks run only after the current bar is valued, and resulting
+orders cannot fill before a later bar. Next-open and conservative limit-touch fills are
+available with fixed, spread, volatility, participation, symbol, and time-of-day slippage
+models. Short sales fail closed.
+
+Each deterministic run reports portfolio and trade metrics plus base, 1.5×, and 2× cost
+cases. The immutable artefact writer records configuration, data and strategy manifests,
+environment provenance, fills, trades, positions, equity, costs, metrics, warnings, logs, and
+an equity chart with checksums. See [`config/backtest.example.yaml`](config/backtest.example.yaml)
+for the initial execution assumptions. WP-12 will supply the first reusable strategy.
 
 ## Branch flow
 
