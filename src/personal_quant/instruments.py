@@ -125,16 +125,21 @@ class ProductionKiteInstrumentSource:
 
 
 def _nse_cash_equity_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Select the WP-04 scope while leaving malformed scope rows for strict validation."""
+    """Select WP-04 rows and normalize provider-optional display names."""
     selected: list[dict[str, Any]] = []
     for row in rows:
         scope = tuple(row.get(field) for field in ("exchange", "segment", "instrument_type"))
-        if any(value is None or not str(value).strip() for value in scope) or scope == (
-            "NSE",
-            "NSE",
-            "EQ",
-        ):
+        if any(value is None or not str(value).strip() for value in scope):
             selected.append(row)
+            continue
+        if scope != ("NSE", "NSE", "EQ"):
+            continue
+        normalized = dict(row)
+        if not str(normalized.get("name") or "").strip():
+            symbol = normalized.get("tradingsymbol")
+            if symbol is not None and str(symbol).strip():
+                normalized["name"] = str(symbol).strip()
+        selected.append(normalized)
     return selected
 
 
