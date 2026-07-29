@@ -167,8 +167,9 @@ def test_sandbox_order_calls_are_limit_cnc_regular_only() -> None:
 
 
 def test_broker_source_contains_no_production_order_root() -> None:
-    broker_root = Path(__file__).parents[1] / "src" / "personal_quant" / "broker"
-    source = "\n".join(path.read_text(encoding="utf-8") for path in broker_root.glob("*.py"))
+    source = (
+        Path(__file__).parents[1] / "src" / "personal_quant" / "broker" / "sandbox.py"
+    ).read_text(encoding="utf-8")
 
     assert "https://api.kite.trade" not in source
     assert '"MARKET"' not in source

@@ -1,0 +1,14 @@
+mode: live
+
+# WP-17 compiles production integration but leaves routing disabled. Do not change this until
+# WP-14 paper acceptance, shadow reconciliation, production review, and Gate D are complete.
+order_routing_enabled: false
+expected_user_id: REPLACE_WITH_APPROVED_ZERODHA_USER_ID
+expected_public_ip: 192.0.2.1
+
+broker:
+  provider: zerodha
+  exchange: NSE
+  product: CNC
+  order_type: LIMIT
+  variety: regular

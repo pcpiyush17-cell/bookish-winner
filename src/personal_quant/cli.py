@@ -16,6 +16,7 @@ from personal_quant.broker.auth import (
     TokenStore,
 )
 from personal_quant.broker.contracts import BrokerError
+from personal_quant.broker.production import ProductionAuthenticator, create_production_client
 from personal_quant.broker.sandbox import create_sandbox_client
 from personal_quant.clocks import SystemClock
 from personal_quant.costs import CostConfig, CostEngine, CostError, DeliveryTrade
@@ -183,6 +184,61 @@ def kite_login(
         _broker_failure(error)
     typer.echo(f"Sandbox authenticated for user: {session.profile.user_id}")
     typer.echo(f"Session token stored at: {session.token_path}")
+
+
+@app.command("kite-production-login")
+def kite_production_login(
+    exchange: Annotated[
+        bool,
+        typer.Option(
+            "--exchange",
+            help="Prompt for a request token and complete production authentication.",
+        ),
+    ] = False,
+    token_path: Annotated[
+        Path,
+        typer.Option("--token-path", help="Restricted production token file."),
+    ] = Path("state/session/production_access_token.json"),
+) -> None:
+    """Authenticate and validate production identity without enabling order routing."""
+    api_key = os.environ.get("KITE_API_KEY")
+    if not api_key:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "production_api_key_missing", "KITE_API_KEY is not configured"
+            )
+        )
+    client = create_production_client(api_key)
+    authenticator = ProductionAuthenticator(client, SystemClock(), TokenStore(token_path))
+    typer.echo(f"Production login URL: {authenticator.login_url()}")
+    typer.echo("Complete login and two-factor authentication in your browser.")
+    typer.echo("This command cannot enable production order routing.")
+    if not exchange:
+        typer.echo("Then rerun with --exchange to enter the short-lived request token.")
+        return
+
+    api_secret = os.environ.get("KITE_API_SECRET")
+    expected_user = os.environ.get("KITE_EXPECTED_USER_ID")
+    if not api_secret or not expected_user:
+        _broker_failure(
+            BrokerAuthenticationError(
+                "production_auth_config_missing",
+                "Production API secret and expected user ID must be configured",
+            )
+        )
+    request_token = typer.prompt("Request token", hide_input=True)
+    try:
+        session = authenticator.exchange(
+            request_token=request_token,
+            api_secret=api_secret,
+            expected_user_id=expected_user,
+        )
+    except (BrokerAuthenticationError, StorageError) as error:
+        _broker_failure(error)
+    typer.echo(f"Production identity validated for user: {session.profile.user_id}")
+    typer.echo(f"Session token stored at: {session.token_path}")
+    typer.echo(f"Token expires by: {session.expires_at.isoformat()}")
+    typer.echo("Production order routing remains disabled.")
 
 
 @app.command("instruments-download")

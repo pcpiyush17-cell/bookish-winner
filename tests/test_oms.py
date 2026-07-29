@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -9,7 +10,7 @@ from personal_quant.accounting import PortfolioAccounting
 from personal_quant.broker.contracts import OrderSide
 from personal_quant.broker.mock import MockBroker
 from personal_quant.clocks import SimulatedClock
-from personal_quant.domain.identifiers import InstrumentKey
+from personal_quant.domain.identifiers import ClientOrderId, InstrumentKey
 from personal_quant.domain.money import Money
 from personal_quant.oms import (
     OmsError,
@@ -178,6 +179,20 @@ def test_ambiguous_timeout_never_blindly_retries_and_blocks_instrument(tmp_path:
     reconciled = oms.reconcile_unknown(order.order_id)
     assert reconciled.state is OrderState.OPEN
     assert len(broker.get_orders()) == 1
+
+
+def test_unknown_order_reconciliation_accepts_zerodha_compact_tag(tmp_path: Path) -> None:
+    database, _, broker, oms = setup(tmp_path)
+    assert isinstance(broker, MockBroker)
+    broker.timeout_next_order_after_submission()
+    _, order = register_approved(database, oms)
+    unknown = oms.submit(order.order_id)
+    broker_order = broker.get_orders()[0]
+    broker._orders[broker_order.broker_order_id] = replace(
+        broker_order, client_order_id=ClientOrderId(unknown.broker_tag)
+    )
+
+    assert oms.reconcile_unknown(order.order_id).state is OrderState.OPEN
 
 
 def test_idempotency_risk_binding_and_modification_limits(tmp_path: Path) -> None:

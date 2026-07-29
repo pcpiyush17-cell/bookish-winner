@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from personal_quant.cli import app
 
+from .test_production_adapter import FakeProductionClient
 from .test_sandbox_adapter import FakeKiteClient
 
 runner = CliRunner()
@@ -65,3 +66,36 @@ def test_kite_login_requires_environment_configuration(
     result = runner.invoke(app, ["kite-login", "--exchange"])
     assert result.exit_code == 1
     assert "sandbox_auth_config_missing" in result.stderr
+
+
+def test_production_login_validates_identity_but_cannot_enable_orders(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = FakeProductionClient()
+    monkeypatch.setenv("KITE_API_KEY", "fixture-key")
+    monkeypatch.setenv("KITE_API_SECRET", "fixture-secret")
+    monkeypatch.setenv("KITE_EXPECTED_USER_ID", "AB1234")
+    monkeypatch.setattr("personal_quant.cli.create_production_client", lambda _key: client)
+    token_path = tmp_path / "production-token.json"
+
+    initial = runner.invoke(app, ["kite-production-login"])
+    exchanged = runner.invoke(
+        app,
+        ["kite-production-login", "--exchange", "--token-path", str(token_path)],
+        input="one-use-token\n",
+    )
+
+    assert initial.exit_code == 0
+    assert "cannot enable production order routing" in initial.stdout
+    assert exchanged.exit_code == 0
+    assert "identity validated for user: AB1234" in exchanged.stdout
+    assert "order routing remains disabled" in exchanged.stdout
+    assert token_path.exists()
+    assert "one-use-token" not in exchanged.stdout
+
+
+def test_production_login_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KITE_API_KEY", raising=False)
+    result = runner.invoke(app, ["kite-production-login"])
+    assert result.exit_code == 1
+    assert "production_api_key_missing" in result.stderr
