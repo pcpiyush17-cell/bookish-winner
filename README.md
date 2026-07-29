@@ -4,7 +4,8 @@ A local-first, safety-focused personal quant trading system built from the engin
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
 The project has completed **WP-00 through WP-13**, the **WP-14 runtime foundation**, the
-**WP-15 local monitoring and control foundation**, and the **WP-16 shadow-mode foundation**,
+**WP-15 local monitoring and control foundation**, the **WP-16 shadow-mode foundation**, and the
+**WP-17 feature-gated Zerodha production-adapter foundation**,
 including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
@@ -289,6 +290,17 @@ unavailable. Initial assumptions are in
 Operational shadow execution fails closed until WP-14 records 10 clean dry sessions followed by
 30 clean formal paper sessions. That acceptance remains **pending**; implementing the shadow
 foundation does not waive or fabricate its evidence.
+
+## Feature-gated production adapter
+
+WP-17 adds human-mediated production authentication, expected-account and public-IP pre-flight,
+restricted LIMIT/CNC order mapping, asynchronous order-update mapping, and broker/local
+reconciliation. The checked-in live configuration keeps routing disabled, and every broker write
+fails closed until the feature flag plus paper, shadow, identity, capability, and IP gates all
+pass. See the [`production adapter safety contract`](docs/PRODUCTION_ADAPTER.md).
+
+WP-14 operational acceptance and production approval remain **pending**. No live-start command or
+automatic production activation exists.
 
 ## Branch flow
 

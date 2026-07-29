@@ -377,7 +377,7 @@ class OrderManagementSystem:
             (
                 item
                 for item in self.broker.get_orders()
-                if item.client_order_id == order.client_order_id
+                if item.client_order_id in {order.client_order_id, ClientOrderId(order.broker_tag)}
             ),
             None,
         )
