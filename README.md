@@ -3,10 +3,10 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-11**, including portfolio accounting, a
-fail-closed pre-trade risk engine, a persistent paper-trading OMS, and a deterministic
-event-driven backtester. It has no production broker adapter and cannot place, modify, or
-cancel real-money orders.
+The project has completed **WP-00 through WP-12**, including portfolio accounting, a
+fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
+event-driven backtester, and a broker-independent baseline strategy. It has no production
+broker adapter and cannot place, modify, or cancel real-money orders.
 
 ## Requirements
 
@@ -202,7 +202,24 @@ Each deterministic run reports portfolio and trade metrics plus base, 1.5×, and
 cases. The immutable artefact writer records configuration, data and strategy manifests,
 environment provenance, fills, trades, positions, equity, costs, metrics, warnings, logs, and
 an equity chart with checksums. See [`config/backtest.example.yaml`](config/backtest.example.yaml)
-for the initial execution assumptions. WP-12 will supply the first reusable strategy.
+for the initial execution assumptions.
+
+## Baseline strategy
+
+`baseline_momentum_v1` is a deliberately simple long-only engineering baseline. It emits
+target-position signals—not broker orders—using completed-bar fast/slow trends, recent
+volatility, average traded value, and an externally supplied market-regime flag. Entry also
+requires configured expected edge to exceed estimated costs plus an uncertainty buffer; exits
+cover trend reversal, time stop, and risk stop.
+
+The same strategy contract is adapted to backtest and paper market events without importing a
+broker in strategy code. Parameters are validated and fingerprinted in
+[`config/strategies/baseline_momentum_v1.yaml`](config/strategies/baseline_momentum_v1.yaml).
+Its hypothesis, assumptions, validation requirements, failure regimes, release status, and
+changelog are recorded in the
+[`strategy card`](docs/strategy_cards/baseline_momentum_v1_1.0.0.md). A deterministic
+buy-and-hold comparator is included. This baseline validates engineering behavior and makes no
+profitability claim.
 
 ## Branch flow
 
@@ -218,7 +235,8 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - Live WebSocket market-data collection is not yet implemented.
-- Strategy and backtest functionality belongs to later work packages.
+- Strategy research has not yet earned evidence beyond engineering validation; no strategy is
+  approved for live trading.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Production broker routing, live market-data collection, and trading orchestration remain

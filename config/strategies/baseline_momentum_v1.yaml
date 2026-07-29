@@ -1,0 +1,19 @@
+schema_version: 1
+strategy_id: baseline_momentum_v1
+version: 1.0.0
+model_version: rules_v1
+universe:
+  - NSE:INFY
+fast_window: 3
+slow_window: 5
+volatility_lookback: 4
+max_volatility_pct: "5.00"
+minimum_average_traded_value_inr: "1000000.00"
+require_positive_regime: true
+target_quantity: 10
+maximum_holding_bars: 20
+stop_loss_pct: "5.00"
+expected_edge_bps: "50.00"
+estimated_cost_bps: "20.00"
+uncertainty_buffer_bps: "10.00"
+signal_expiry_minutes: 1440
