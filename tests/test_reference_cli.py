@@ -20,6 +20,14 @@ class InstrumentClient(FakeKiteClient):
         return [row()]
 
 
+class MixedInstrumentClient(FakeKiteClient):
+    def instruments(self, exchange: str | None = None) -> list[dict[str, Any]]:
+        equity = row()
+        index = row(token=2002, symbol="NIFTY 50")
+        index["instrument_type"] = "INDICES"
+        return [equity, index]
+
+
 def test_reference_validation_and_calendar_commands(tmp_path: Path) -> None:
     root = tmp_path / "instruments"
     InstrumentSnapshotStore(root).save(
@@ -99,6 +107,41 @@ def test_instrument_download_uses_validated_production_token(
     assert "1 NSE equities" in result.stdout
     assert "order routing remains disabled" in result.stdout
     assert "production-access" not in result.stdout
+
+
+def test_production_instrument_download_filters_non_equity_nse_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token_path = tmp_path / "production-token.json"
+    TokenStore(token_path).save(
+        access_token="production-access",
+        user_id="ALU209",
+        authenticated_at="2026-07-30T00:01:00+05:30",
+    )
+    monkeypatch.setenv("KITE_API_KEY", "production-key")
+    monkeypatch.setenv("KITE_EXPECTED_USER_ID", "ALU209")
+    monkeypatch.setattr(
+        "personal_quant.cli.create_production_client", lambda api_key: MixedInstrumentClient()
+    )
+
+    root = tmp_path / "snapshots"
+    result = runner.invoke(
+        app,
+        [
+            "instruments-download",
+            "--production",
+            "--root",
+            str(root),
+            "--token-path",
+            str(token_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "1 NSE equities" in result.stdout
+    directories = tuple((root / "provider=zerodha").iterdir())
+    snapshot = InstrumentSnapshotStore(root).load(directories[0])
+    assert tuple(str(item.key) for item in snapshot.instruments) == ("NSE:INFY",)
 
 
 def test_production_instrument_download_rejects_token_identity_mismatch(
