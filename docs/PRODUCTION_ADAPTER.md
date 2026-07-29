@@ -20,6 +20,13 @@ uv run pq kite-production-login
 uv run pq kite-production-login --exchange
 ```
 
+After identity validation, production market data can be used to create the immutable daily NSE
+instrument snapshot. This is an explicit read-only data action and cannot enable order routing:
+
+```powershell
+uv run pq instruments-download --production
+```
+
 Never commit those environment values or the resulting token file. Authentication alone cannot
 enable orders. Tokens are treated as expiring no later than the next 06:00 Asia/Kolkata boundary.
 

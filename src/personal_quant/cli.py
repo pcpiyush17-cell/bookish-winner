@@ -32,6 +32,8 @@ from personal_quant.historical import (
 from personal_quant.instruments import (
     InstrumentError,
     InstrumentSnapshotStore,
+    InstrumentSource,
+    ProductionKiteInstrumentSource,
     SandboxKiteInstrumentSource,
     download_instruments,
 )
@@ -308,25 +310,53 @@ def instruments_download(
     root: Annotated[Path, typer.Option("--root", help="Instrument snapshot root.")] = Path(
         "data/reference/instruments"
     ),
-    token_path: Annotated[Path, typer.Option("--token-path", help="Sandbox token file.")] = Path(
-        "state/session/sandbox_access_token.json"
-    ),
+    token_path: Annotated[
+        Path | None,
+        typer.Option("--token-path", help="Session token file; defaults depend on mode."),
+    ] = None,
+    production: Annotated[
+        bool,
+        typer.Option(
+            "--production",
+            help="Use authenticated production market data; never enables order routing.",
+        ),
+    ] = False,
 ) -> None:
     """Download and persist today's validated NSE equity instrument snapshot."""
-    api_key = os.environ.get("KITE_SANDBOX_API_KEY")
+    api_key_env = "KITE_API_KEY" if production else "KITE_SANDBOX_API_KEY"
+    api_key = os.environ.get(api_key_env)
     if not api_key:
-        _broker_failure(
-            BrokerAuthenticationError(
-                "sandbox_api_key_missing", "KITE_SANDBOX_API_KEY is not configured"
-            )
-        )
+        code = "production_api_key_missing" if production else "sandbox_api_key_missing"
+        _broker_failure(BrokerAuthenticationError(code, f"{api_key_env} is not configured"))
+    selected_token_path = token_path or Path(
+        "state/session/production_access_token.json"
+        if production
+        else "state/session/sandbox_access_token.json"
+    )
     try:
-        token = TokenStore(token_path).load()
-        client = create_sandbox_client(api_key)
+        token = TokenStore(selected_token_path).load()
+        source: InstrumentSource
+        if production:
+            expected_user = os.environ.get("KITE_EXPECTED_USER_ID")
+            if not expected_user:
+                raise BrokerAuthenticationError(
+                    "production_expected_user_missing",
+                    "KITE_EXPECTED_USER_ID is not configured",
+                )
+            if token.user_id != expected_user:
+                raise BrokerAuthenticationError(
+                    "production_token_identity_mismatch",
+                    "Stored production token does not match the approved identity",
+                )
+            client = create_production_client(api_key)
+            source = ProductionKiteInstrumentSource(client)
+        else:
+            client = create_sandbox_client(api_key)
+            source = SandboxKiteInstrumentSource(client)
         client.set_access_token(token.access_token)
         now = SystemClock().now()
         snapshot = download_instruments(
-            SandboxKiteInstrumentSource(client),
+            source,
             InstrumentSnapshotStore(root),
             snapshot_date=now.astimezone(ZoneInfo("Asia/Kolkata")).date(),
             downloaded_at=now,
@@ -337,6 +367,8 @@ def instruments_download(
         _reference_failure(error)
     typer.echo(f"Instrument snapshot ready: {snapshot.manifest.row_count} NSE equities")
     typer.echo(f"SHA-256: {snapshot.manifest.checksum_sha256}")
+    if production:
+        typer.echo("Production market data used; production order routing remains disabled.")
 
 
 @app.command("instruments-validate")

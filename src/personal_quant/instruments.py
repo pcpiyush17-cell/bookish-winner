@@ -109,6 +109,22 @@ class SandboxKiteInstrumentSource:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductionKiteInstrumentSource:
+    """Read the public instrument master through an authenticated production client."""
+
+    client: KiteClient
+
+    def fetch_nse(self) -> list[dict[str, Any]]:
+        try:
+            return self.client.instruments("NSE")
+        except Exception:
+            raise BrokerError(
+                "production_instruments_failed",
+                "Production instrument download failed; sensitive details were redacted",
+            ) from None
+
+
+@dataclass(frozen=True, slots=True)
 class InstrumentSnapshotStore:
     root: Path
 
