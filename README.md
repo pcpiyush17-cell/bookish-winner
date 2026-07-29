@@ -3,8 +3,8 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-13**, the **WP-14 runtime foundation**, and the
-**WP-15 local monitoring and control foundation**,
+The project has completed **WP-00 through WP-13**, the **WP-14 runtime foundation**, the
+**WP-15 local monitoring and control foundation**, and the **WP-16 shadow-mode foundation**,
 including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
@@ -277,6 +277,18 @@ Open `http://127.0.0.1:8501`. The API binds to `127.0.0.1:8765` by default. Do n
 control token in Git; enter it only for a control operation. Dashboard/API failure is isolated
 from the paper engine. WP-14 operational acceptance remains pending until its required real
 session evidence is complete.
+
+## Shadow mode foundation
+
+WP-16 adds a deliberately read-only broker adapter, immutable broker snapshots, intended-order
+comparison, and checksum-backed difference reports. Its adapter has no `place_order`,
+`modify_order`, or `cancel_order` method, and reports explicitly record that transmission is
+unavailable. Initial assumptions are in
+[`config/shadow.example.yaml`](config/shadow.example.yaml).
+
+Operational shadow execution fails closed until WP-14 records 10 clean dry sessions followed by
+30 clean formal paper sessions. That acceptance remains **pending**; implementing the shadow
+foundation does not waive or fabricate its evidence.
 
 ## Branch flow
 
