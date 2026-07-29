@@ -3,10 +3,11 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-12**, including portfolio accounting, a
+The project has completed **WP-00 through WP-13**, including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
-event-driven backtester, and a broker-independent baseline strategy. It has no production
-broker adapter and cannot place, modify, or cancel real-money orders.
+event-driven backtester, a broker-independent baseline strategy, and replayable live-data
+collection. It has no production broker adapter and cannot place, modify, or cancel real-money
+orders.
 
 ## Requirements
 
@@ -221,6 +222,22 @@ changelog are recorded in the
 buy-and-hold comparator is included. This baseline validates engineering behavior and makes no
 profitability claim.
 
+## Live data and replay
+
+The WebSocket collector is transport-injected and subscribes only to its approved instrument
+map in an explicit `ltp`, `quote`, or `full` mode. Feed health fails closed on disconnect,
+missing heartbeat, stale quotes, incomplete subscriptions, malformed data, and reconnect. A
+reconnected socket remains in `AWAITING_FRESH_DATA` until every approved instrument has a fresh
+valid quote from the new connection generation.
+
+Accepted ticks and lifecycle/order-update events are recorded to immutable compressed Parquet
+with a row-count and SHA-256 manifest. Exact duplicates are no-ops; conflicting, unknown,
+crossed, stale, future, and out-of-order ticks become recorded data-quality violations. Replay
+verifies the checksum and drives an injected simulated clock at any positive speed while
+preserving the identical event stream. Initial assumptions are in
+[`config/live_data.example.yaml`](config/live_data.example.yaml), with recovery steps in the
+[`WebSocket reconnect runbook`](docs/runbooks/WEBSOCKET_RECONNECT.md).
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -234,7 +251,8 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- Live WebSocket market-data collection is not yet implemented.
+- A production-authenticated Zerodha WebSocket process is not yet wired; WP-13 provides the
+  tested collector contract, health gates, recording, and replay engine.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
 - Sandbox support does not imply approval for live trading. Production authentication and
