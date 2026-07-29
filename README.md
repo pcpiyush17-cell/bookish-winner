@@ -3,9 +3,9 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-09**, including portfolio accounting and a
-fail-closed pre-trade risk engine. It has no production broker adapter and cannot place,
-modify, or cancel real-money orders.
+The project has completed **WP-00 through WP-10**, including portfolio accounting, a
+fail-closed pre-trade risk engine, and a persistent paper-trading OMS. It has no production
+broker adapter and cannot place, modify, or cancel real-money orders.
 
 ## Requirements
 
@@ -176,6 +176,19 @@ uv run pq kill-switch-reset --reconciled --confirm
 The kill switch survives process restart. Reset requires both a healthy reconciliation and
 explicit human confirmation. Automated circuit breakers use the same persistent mechanism.
 
+## Order management and paper execution
+
+Migration `0004` persists risk-linked limit orders, explicit state transitions, broker fills,
+and reconciliation incidents. Submission uses deterministic client IDs and is attempted once:
+an ambiguous timeout moves the order to `RECONCILIATION_REQUIRED`, blocks new orders for the
+instrument, and requires broker-order reconciliation before any resubmission. Partial fills,
+cancellation, at most two modifications, restart recovery, and fill deduplication are covered
+by deterministic golden scenarios.
+
+`PaperBroker` fills eligible limit orders only on a later bar whose range touches the limit.
+Its fill quantity is capped by configured bar-volume participation, making the execution
+assumption explicit and reproducible.
+
 ## Branch flow
 
 Changes begin on a focused work-package branch and flow through `dev`, `qa`, and `main`.
@@ -190,8 +203,9 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - Live WebSocket market-data collection is not yet implemented.
-- Strategy, backtest, and order-management functionality belongs to later work packages.
+- Strategy and backtest functionality belongs to later work packages.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
-- Production OMS, live market-data collection, and trading orchestration remain unavailable.
+- Production broker routing, live market-data collection, and trading orchestration remain
+  unavailable; the OMS currently targets mock and paper brokers only.
 - Python support is intentionally restricted to the installed Python 3.11 series.

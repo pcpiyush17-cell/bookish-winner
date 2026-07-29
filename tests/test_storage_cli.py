@@ -19,7 +19,7 @@ def test_storage_cli_lifecycle(tmp_path: Path) -> None:
     )
 
     assert initialized.exit_code == 0
-    assert "Migrations applied: 0001, 0002, 0003" in initialized.stdout
+    assert "Migrations applied: 0001, 0002, 0003, 0004" in initialized.stdout
     assert checked.exit_code == 0
     assert "[PASS] Database integrity" in checked.stdout
     assert backed_up.exit_code == 0
