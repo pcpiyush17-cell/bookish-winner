@@ -2,6 +2,7 @@ import ast
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 import yaml
@@ -254,7 +255,9 @@ def test_operational_assembly_runs_one_clean_temp_session_with_paper_broker_only
 ) -> None:
     now = datetime.now(UTC)
     snapshot = InstrumentSnapshotStore(tmp_path / "instruments").save(
-        rows=[instrument_row()], snapshot_date=now.astimezone().date(), downloaded_at=now
+        rows=[instrument_row()],
+        snapshot_date=now.astimezone(ZoneInfo("Asia/Kolkata")).date(),
+        downloaded_at=now,
     )
     snapshot_directory = (
         tmp_path / "instruments" / "provider=zerodha" / f"date={snapshot.manifest.snapshot_date}"

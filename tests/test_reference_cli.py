@@ -69,6 +69,60 @@ def test_instrument_download_requires_api_key(monkeypatch: pytest.MonkeyPatch) -
     assert "sandbox_api_key_missing" in result.stderr
 
 
+def test_instrument_download_uses_validated_production_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token_path = tmp_path / "production-token.json"
+    TokenStore(token_path).save(
+        access_token="production-access",
+        user_id="ALU209",
+        authenticated_at="2026-07-29T10:00:00+05:30",
+    )
+    client = InstrumentClient()
+    monkeypatch.setenv("KITE_API_KEY", "production-key")
+    monkeypatch.setenv("KITE_EXPECTED_USER_ID", "ALU209")
+    monkeypatch.setattr("personal_quant.cli.create_production_client", lambda api_key: client)
+
+    result = runner.invoke(
+        app,
+        [
+            "instruments-download",
+            "--production",
+            "--root",
+            str(tmp_path / "snapshots"),
+            "--token-path",
+            str(token_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "1 NSE equities" in result.stdout
+    assert "order routing remains disabled" in result.stdout
+    assert "production-access" not in result.stdout
+
+
+def test_production_instrument_download_rejects_token_identity_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token_path = tmp_path / "production-token.json"
+    TokenStore(token_path).save(
+        access_token="production-access",
+        user_id="OTHER01",
+        authenticated_at="2026-07-29T10:00:00+05:30",
+    )
+    monkeypatch.setenv("KITE_API_KEY", "production-key")
+    monkeypatch.setenv("KITE_EXPECTED_USER_ID", "ALU209")
+
+    result = runner.invoke(
+        app,
+        ["instruments-download", "--production", "--token-path", str(token_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "production_token_identity_mismatch" in result.stderr
+    assert "production-access" not in result.stderr
+
+
 def test_historical_download_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("KITE_SANDBOX_API_KEY", raising=False)
     result = runner.invoke(
