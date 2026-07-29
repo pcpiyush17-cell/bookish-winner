@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -85,6 +86,23 @@ class MockBroker:
 
     def get_trades(self) -> tuple[BrokerTrade, ...]:
         return tuple(self._trades)
+
+    def restore_portfolio(
+        self,
+        cash: Money,
+        positions: Mapping[InstrumentKey, tuple[int, Money]],
+    ) -> None:
+        """Restore persisted paper state before a new session, never during order activity."""
+        if self._orders or self._trades:
+            raise BrokerError(
+                "portfolio_restore_active", "Portfolio cannot be restored after order activity"
+            )
+        if any(quantity < 0 for quantity, _average in positions.values()):
+            raise BrokerError(
+                "short_position_blocked", "Restored paper positions must be long-only"
+            )
+        self._cash = cash
+        self._positions = dict(positions)
 
     def place_order(self, request: BrokerOrderRequest) -> BrokerOrderAck:
         existing = self._client_orders.get(request.client_order_id)

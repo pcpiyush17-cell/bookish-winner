@@ -131,3 +131,21 @@ def test_sell_fill_updates_cash_but_short_fill_is_blocked() -> None:
     with pytest.raises(BrokerError) as error:
         short_mock.fill(short.broker_order_id, 1, Money.from_value("100"))
     assert error.value.code == "short_position_blocked"
+
+
+def test_paper_portfolio_restore_is_allowed_only_before_order_activity() -> None:
+    mock, _ = broker()
+    instrument = InstrumentKey("NSE:INFY")
+    mock.restore_portfolio(Money.from_value("8750"), {instrument: (2, Money.from_value("625"))})
+    assert mock.get_funds().available_cash == Money.from_value("8750")
+    assert mock.get_positions()[0].quantity == 2
+
+    mock.place_order(request())
+    with pytest.raises(BrokerError) as active:
+        mock.restore_portfolio(Money.from_value("1"), {})
+    assert active.value.code == "portfolio_restore_active"
+
+    empty, _ = broker()
+    with pytest.raises(BrokerError) as short:
+        empty.restore_portfolio(Money.from_value("1"), {instrument: (-1, Money.from_value("625"))})
+    assert short.value.code == "short_position_blocked"

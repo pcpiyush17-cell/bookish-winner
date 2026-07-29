@@ -1,12 +1,11 @@
 # WP-14 operational validation runbook
 
-Status: **NOT READY TO START COUNTING SESSIONS**.
+Status: **RUNNER IMPLEMENTED; OPERATOR READINESS REHEARSAL PENDING**.
 
-The lifecycle engine, paper broker, evidence schema, and immutable daily reports are implemented.
-The production-authenticated current-data collector is not yet assembled into an operator-run
-paper process. Until that gap is closed and verified, do not treat tests, replay, accelerated
-clocks, manually inserted database rows, copied reports, or repeated runs on one market date as
-operational evidence.
+The lifecycle engine, paper broker, evidence schema, immutable reports, and authenticated
+current-data runner are implemented. Do not begin counting sessions until the readiness rehearsal
+below passes. Tests, replay, accelerated clocks, manually inserted database rows, copied reports,
+or repeated runs on one market date are never operational evidence.
 
 ## Read-only status
 
@@ -22,18 +21,27 @@ reconciliation, required pre-flight/bar/shutdown snapshots, report identity, and
 session of each evidence kind per market date. It will continue to show `PENDING` until the
 requirements are genuinely met.
 
-## Readiness work before session 1
+## Readiness rehearsal before session 1
 
-- Wire the production-authenticated WebSocket collector to the paper runtime with no production
-  broker order path.
-- Add an operator start/stop command that uses `SystemClock`, the current NSE calendar and
-  instrument snapshot, fresh-feed health, the approved strategy manifest, and the paper broker.
+- Review `config/paper_runner.example.yaml`, update the dated instrument snapshot directory, and
+  confirm every state/data/report path resolves under `F:\Quant_Trader`.
+- Inspect the runner and confirm it constructs `PaperBroker`, not a production broker adapter.
 - Verify account identity and authentication are reads only; all order intents must terminate at
   the paper broker.
 - Record the Git commit, release-manifest hash, strategy-manifest hash, and config fingerprint.
 - Rehearse WebSocket reconnect, graceful shutdown, kill switch, database backup, and restart
   recovery.
 - Review and approve disk paths on `F:` so runtime data does not consume the `C:` drive.
+- Start only with the exact dry-session confirmation phrase:
+
+  ```powershell
+  uv run pq paper-session-start --config config/paper_runner.example.yaml `
+    --confirm "START DRY PAPER SESSION"
+  ```
+
+- Use Ctrl+C to rehearse graceful shutdown, then verify the recording manifest, runtime report,
+  released lock, database integrity, and evidence auditor output. A rehearsal is not automatically
+  countable; the operator must designate beforehand whether it is the first scheduled dry session.
 
 ## Evidence sequence
 
@@ -66,3 +74,7 @@ details in Git.
 - Anomalies, owner, resolution, and approval:
 
 Passing engineering tests prepares the workflow but does not satisfy operational acceptance.
+
+The callback and tick-field assumptions follow Zerodha's official
+[Kite Connect WebSocket documentation](https://kite.trade/docs/connect/v3/websocket/) and
+[official Python SDK callback example](https://kite.trade/docs/connect/v3/agent-setup/).
