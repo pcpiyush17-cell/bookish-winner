@@ -27,4 +27,9 @@ substitutes for this operating evidence.
 After every session, review feed gaps, rejected risk reasons, order/fill lifecycle, positions,
 cash, P&L, costs, report completeness, and shutdown status. Pause the sequence on any
 reconciliation failure, investigate it, record resolution evidence, and restart the formal
-count only according to the project’s promotion decision.
+count only according to the project's promotion decision.
+
+Use `uv run pq paper-evidence-status --path F:\Quant_Trader\state\trading.sqlite` for a
+read-only integrity audit. See the
+[`WP-14 operational validation runbook`](runbooks/WP14_OPERATIONAL_VALIDATION.md) before attempting
+the first countable session.

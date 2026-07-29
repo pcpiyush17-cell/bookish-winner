@@ -256,6 +256,17 @@ locked until ten clean dry sessions exist, and only clean reconciled sessions wi
 kill switch count. See [`config/paper_runtime.example.yaml`](config/paper_runtime.example.yaml)
 and the [`paper session evidence protocol`](docs/PAPER_SESSION_PROTOCOL.md).
 
+Operational evidence can be inspected without mutation with:
+
+```powershell
+uv run pq paper-evidence-status --path F:\Quant_Trader\state\trading.sqlite
+```
+
+The [`WP-14 operational validation runbook`](docs/runbooks/WP14_OPERATIONAL_VALIDATION.md)
+currently marks session collection as not ready until the production-authenticated current-data
+collector is assembled into the paper runtime. Tests, replay, accelerated clocks, and manually
+inserted rows never count as operational evidence.
+
 ## Local monitoring and controls
 
 WP-15 provides a localhost-only FastAPI service and a separate Streamlit dashboard for system,

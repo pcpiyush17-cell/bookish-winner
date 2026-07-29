@@ -36,6 +36,7 @@ from personal_quant.instruments import (
     download_instruments,
 )
 from personal_quant.market_calendar import CalendarError, MarketCalendar
+from personal_quant.paper_evidence import audit_paper_evidence
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -46,6 +47,29 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("paper-evidence-status")
+def paper_evidence_status(
+    path: Annotated[Path, typer.Option("--path", help="SQLite database path.")] = Path(
+        "state/trading.sqlite"
+    ),
+) -> None:
+    """Audit WP-14 evidence in read-only mode; never creates or promotes sessions."""
+    try:
+        audit = audit_paper_evidence(Database(path))
+    except StorageError as error:
+        _storage_failure(error)
+    typer.echo(f"Audited dry sessions: {audit.successful_dry_sessions}/10")
+    typer.echo(f"Audited formal sessions: {audit.successful_formal_sessions}/30")
+    typer.echo(
+        "WP-14 operational acceptance: "
+        + ("MET" if audit.operational_acceptance_met else "PENDING")
+    )
+    for issue in audit.issues:
+        typer.echo(f"Issue [{issue.code}] session={issue.session_id}: {issue.message}")
+    for blocker in audit.blockers:
+        typer.echo(f"Blocker: {blocker}")
 
 
 def version_callback(value: bool) -> None:
