@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
@@ -53,12 +54,13 @@ class MarketBar:
 class PaperBroker:
     clock: Clock
     max_participation: Decimal = Decimal("0.10")
+    opening_cash: Money = field(default_factory=lambda: Money.from_value("10000.00"))
     broker: MockBroker = field(init=False)
 
     def __post_init__(self) -> None:
         if not Decimal(0) < self.max_participation <= Decimal(1):
             raise ValueError("paper participation must be within (0, 1]")
-        self.broker = MockBroker(self.clock)
+        self.broker = MockBroker(self.clock, self.opening_cash)
 
     def process_bar(self, bar: MarketBar) -> tuple[BrokerTrade, ...]:
         fills: list[BrokerTrade] = []
@@ -84,6 +86,13 @@ class PaperBroker:
             fills.append(self.broker.fill(order.broker_order_id, quantity, price))
             available -= quantity
         return tuple(fills)
+
+    def restore_portfolio(
+        self,
+        cash: Money,
+        positions: Mapping[InstrumentKey, tuple[int, Money]],
+    ) -> None:
+        self.broker.restore_portfolio(cash, positions)
 
     def get_profile(self) -> BrokerProfile:
         return self.broker.get_profile()

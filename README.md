@@ -263,9 +263,9 @@ uv run pq paper-evidence-status --path F:\Quant_Trader\state\trading.sqlite
 ```
 
 The [`WP-14 operational validation runbook`](docs/runbooks/WP14_OPERATIONAL_VALIDATION.md)
-currently marks session collection as not ready until the production-authenticated current-data
-collector is assembled into the paper runtime. Tests, replay, accelerated clocks, and manually
-inserted rows never count as operational evidence.
+requires an operator readiness rehearsal before collection begins. The current-data runner routes
+all intents exclusively to `PaperBroker`. Tests, replay, accelerated clocks, and manually inserted
+rows never count as operational evidence.
 
 ## Local monitoring and controls
 
@@ -326,14 +326,14 @@ excluded by `.gitignore`.
 
 ## Current limitations
 
-- A production-authenticated Zerodha WebSocket process is not yet wired; WP-13 provides the
-  tested collector contract, health gates, recording, and replay engine.
+- The production-authenticated WebSocket runner is restricted to current-data input and
+  `PaperBroker`; its operator readiness rehearsal and WP-14 evidence collection remain pending.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
 - The WP-14 requirement for ten dry sessions followed by thirty formal paper sessions has not
   yet been completed; the foundation records and enforces that evidence sequence.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
-- Production broker routing, live market-data collection, and trading orchestration remain
-  unavailable; the OMS currently targets mock and paper brokers only.
+- Production broker routing and live trading orchestration remain feature-gated and unavailable;
+  the operational session runner deliberately targets `PaperBroker` only.
 - Python support is intentionally restricted to the installed Python 3.11 series.

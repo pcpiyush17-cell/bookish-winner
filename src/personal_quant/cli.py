@@ -37,6 +37,7 @@ from personal_quant.instruments import (
 )
 from personal_quant.market_calendar import CalendarError, MarketCalendar
 from personal_quant.paper_evidence import audit_paper_evidence
+from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -70,6 +71,43 @@ def paper_evidence_status(
         typer.echo(f"Issue [{issue.code}] session={issue.session_id}: {issue.message}")
     for blocker in audit.blockers:
         typer.echo(f"Blocker: {blocker}")
+
+
+@app.command("paper-session-start")
+def paper_session_start(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Operational paper-runner configuration.")
+    ] = Path("config/paper_runner.example.yaml"),
+    confirm: Annotated[
+        str,
+        typer.Option(
+            "--confirm",
+            help="Exact phrase: START DRY PAPER SESSION or START FORMAL PAPER SESSION.",
+        ),
+    ] = "",
+) -> None:
+    """Run one current-data session whose only execution venue is PaperBroker."""
+    try:
+        config = RunnerConfig.load(config_path)
+        expected = f"START {config.evidence_kind.value.upper()} PAPER SESSION"
+        if confirm != expected:
+            raise PaperRunnerError(
+                "paper_confirmation_invalid", f"Exact confirmation required: {expected}"
+            )
+        runner = build_operational_runner(config)
+        typer.echo("Paper runner assembled. Production order routing is not reachable.")
+        typer.echo("Press Ctrl+C for graceful shutdown.")
+        try:
+            report, recording = runner.run_until_stopped()
+        except KeyboardInterrupt:
+            typer.echo("Graceful shutdown completed after operator interrupt.")
+            return
+    except (PaperRunnerError, StorageError) as error:
+        code = error.code
+        typer.echo(f"Paper runner error [{code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Session report: {report.session_id}")
+    typer.echo(f"Recording manifest: {recording.manifest_path}")
 
 
 def version_callback(value: bool) -> None:

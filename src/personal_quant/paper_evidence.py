@@ -157,7 +157,7 @@ def _session_issues(row: dict[str, object], snapshots: set[str]) -> list[Evidenc
 
 def _workflow_blockers(dry: int, formal: int) -> tuple[str, ...]:
     blockers = [
-        "Production-authenticated current-data collector/runtime assembly is not yet wired",
+        "Operational paper runner must pass the operator readiness rehearsal",
         "Operator must verify instrument master, calendar, feed freshness, account, and auth",
     ]
     if dry < DRY_REQUIRED:
