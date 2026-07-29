@@ -1,0 +1,17 @@
+schema_version: 1
+engine: event_driven
+starting_capital_inr: "10000.00"
+fill_model: next_bar_open
+slippage:
+  model: fixed_bps
+  value_bps: "10.00"
+cost_stress_multipliers: ["1.0", "1.5", "2.0"]
+allow_short_positions: false
+same_bar_fills: false
+artefacts:
+  immutable: true
+  include_trades: true
+  include_positions: true
+  include_equity: true
+  include_costs: true
+  include_metrics: true
