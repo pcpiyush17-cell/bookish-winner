@@ -19,13 +19,19 @@ dependencies = [
     "pyyaml>=6,<7",
     "typer>=0.16,<1",
     "tzdata>=2025.2",
+    "fastapi>=0.116,<1",
+    "uvicorn>=0.35,<1",
+    "streamlit>=1.47,<2",
+    "plotly>=6.2,<7",
 ]
 
 [project.scripts]
 pq = "personal_quant.cli:app"
+pq-api = "personal_quant.api:main"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28,<1",
     "hypothesis>=6.138,<7",
     "mypy>=1.17,<2",
     "pre-commit>=4.2,<5",

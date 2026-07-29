@@ -3,7 +3,8 @@
 A local-first, safety-focused personal quant trading system built from the engineering
 contract in [`PERSONAL_QUANT_SYSTEM_BLUEPRINT.md`](PERSONAL_QUANT_SYSTEM_BLUEPRINT.md).
 
-The project has completed **WP-00 through WP-13** and the **WP-14 runtime foundation**,
+The project has completed **WP-00 through WP-13**, the **WP-14 runtime foundation**, and the
+**WP-15 local monitoring and control foundation**,
 including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
@@ -253,6 +254,29 @@ releases the lock. Unfinished sessions are marked interrupted on recovery. Forma
 locked until ten clean dry sessions exist, and only clean reconciled sessions without an active
 kill switch count. See [`config/paper_runtime.example.yaml`](config/paper_runtime.example.yaml)
 and the [`paper session evidence protocol`](docs/PAPER_SESSION_PROTOCOL.md).
+
+## Local monitoring and controls
+
+WP-15 provides a localhost-only FastAPI service and a separate Streamlit dashboard for system,
+capital/P&L, orders/fills, strategy, risk, costs, reconciliation, and control-audit views. The
+dashboard reads through HTTP and never opens the trading database. State-changing controls
+require a 32-character-or-longer bearer token, an actor, a reason, and an exact confirmation;
+every denied, failed, or successful attempt is written to the control audit. There is no live
+trading enable control.
+
+In separate PowerShell terminals, set the same database path for the API and runtime, then run:
+
+```powershell
+$env:PQ_DATABASE_PATH = "F:\Quant_Trader\state\trading.sqlite"
+$env:PQ_DASHBOARD_CONTROL_TOKEN = "replace-with-a-random-secret-of-at-least-32-characters"
+uv run pq-api
+uv run streamlit run src/personal_quant/dashboard.py
+```
+
+Open `http://127.0.0.1:8501`. The API binds to `127.0.0.1:8765` by default. Do not put the
+control token in Git; enter it only for a control operation. Dashboard/API failure is isolated
+from the paper engine. WP-14 operational acceptance remains pending until its required real
+session evidence is complete.
 
 ## Branch flow
 
