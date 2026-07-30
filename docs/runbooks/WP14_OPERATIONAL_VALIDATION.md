@@ -1,6 +1,6 @@
 # WP-14 operational validation runbook
 
-Status: **READINESS REHEARSAL PASSED; OPERATIONAL EVIDENCE 0/10 DRY, 0/30 FORMAL**.
+Status: **READINESS REHEARSAL PASSED; OPERATIONAL EVIDENCE 1/10 DRY, 0/30 FORMAL**.
 
 The lifecycle engine, paper broker, evidence schema, immutable reports, and authenticated
 current-data runner are implemented. The non-counting readiness rehearsal passed on 2026-07-30.
@@ -20,6 +20,32 @@ delivery-cost model, reconciled cash and positions, wrote its immutable report, 
 integrity, released its runtime lock, and shut down cleanly. Production order routing remained
 unreachable. Its isolated database, reports, and recording are non-counting rehearsal artifacts
 and must never be copied into operational evidence paths.
+
+## Accepted operational evidence
+
+### Dry Session 1 of 10 — 2026-07-30
+
+The first countable dry session ran from merged `dev` commit
+`d01c142d36e541ff6ddb4ad010e233d2a03dcbd5` for approximately 1 hour 49 minutes. The runtime
+session ID was `5fc4d0fa-f7bf-423b-84eb-926aff314ba0`; the independently finalized recording ID
+was `3196021e-95af-4a3b-a8b8-04c45e83a5f7`.
+
+The recording contained 8,398 lifecycle and market-data events, including 8,395 accepted ticks
+and 2,406 groups with repeated exchange timestamps. Every accepted tick had a unique event ID,
+there were zero data-quality violations, and the Parquet file matched SHA-256
+`dd9513e6648f4866c6d8deecf95fe7ab5c7e760fcbd471dedb1d369dd875bfbe`.
+
+The runtime processed 84 signals, approved 10 risk decisions, rejected 74, and completed 10
+simulated orders and fills with no open orders at shutdown. It ended with INR 8,792.85 cash, one
+INFY share valued at INR 1,172.00, INR 9,964.85 net liquidation value, INR -0.80 realised P&L,
+INR -1.90 unrealised P&L, and INR 32.45 in versioned estimated costs. The database and
+post-session backup passed integrity checks; reconciliation was healthy, the kill switch was
+inactive, the runtime lock was released, and production order routing remained unreachable.
+
+The broker reported WebSocket close code 1006 during the operator-triggered closing handshake.
+This did not interrupt operational processing: recording finalization, the immutable report,
+reconciliation, clean runtime shutdown, and lock release all completed. The read-only evidence
+auditor accepted the session and reported `1/10` dry sessions and `0/30` formal sessions.
 
 ## Read-only status
 

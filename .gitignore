@@ -21,6 +21,7 @@ mlruns/
 data/raw/
 data/curated/
 data/reference/
+data/recordings/
 *.sqlite
 *.sqlite3
 *.duckdb

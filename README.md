@@ -10,8 +10,8 @@ including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
 collection. It has no production broker adapter and cannot place, modify, or cancel real-money
-orders. The WP-14 non-counting readiness rehearsal passed on 2026-07-30; operational acceptance
-remains pending 10 dry and 30 formal sessions of real evidence.
+orders. The WP-14 non-counting readiness rehearsal passed on 2026-07-30, followed by the first
+accepted dry session; operational acceptance remains pending 9 dry and 30 formal sessions.
 
 ## Requirements
 
@@ -328,11 +328,12 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - The production-authenticated WebSocket runner is restricted to current-data input and
-  `PaperBroker`; its readiness rehearsal passed, while WP-14 evidence collection remains pending.
+  `PaperBroker`; its readiness rehearsal and Dry Session 1 passed, while WP-14 evidence collection
+  remains pending.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
-- The WP-14 requirement for ten dry sessions followed by thirty formal paper sessions has not
-  yet been completed; the foundation records and enforces that evidence sequence.
+- The WP-14 requirement has reached 1/10 dry sessions and 0/30 formal sessions; the foundation
+  records and enforces the remaining evidence sequence.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Production broker routing and live trading orchestration remain feature-gated and unavailable;
