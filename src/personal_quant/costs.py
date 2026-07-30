@@ -158,6 +158,24 @@ class DeliveryTrade:
 
 
 @dataclass(frozen=True, slots=True)
+class DeliveryFill:
+    quantity: int
+    price: Decimal
+    side: str
+    spread_bps: Decimal = Decimal(0)
+    slippage_bps: Decimal = Decimal(0)
+    impact_bps: Decimal = Decimal(0)
+
+    def __post_init__(self) -> None:
+        if self.quantity <= 0 or self.price <= 0:
+            raise CostError("fill_invalid", "Quantity and price must be positive")
+        if self.side not in {"BUY", "SELL"}:
+            raise CostError("fill_side_invalid", "Delivery fill side must be BUY or SELL")
+        if min(self.spread_bps, self.slippage_bps, self.impact_bps) < 0:
+            raise CostError("execution_cost_invalid", "Execution assumptions cannot be negative")
+
+
+@dataclass(frozen=True, slots=True)
 class CostBreakdown:
     calculation_version: str
     buy_turnover: Decimal
@@ -176,6 +194,23 @@ class CostBreakdown:
     gross_pnl: Decimal
     trading_net_pnl: Decimal
     scenario_multiplier: Decimal
+    cost_kind: str = "estimate"
+
+
+@dataclass(frozen=True, slots=True)
+class FillCostBreakdown:
+    calculation_version: str
+    brokerage: Decimal
+    stt: Decimal
+    exchange_transaction_charge: Decimal
+    sebi_turnover_charge: Decimal
+    gst: Decimal
+    stamp_duty: Decimal
+    dp_charge: Decimal
+    spread: Decimal
+    slippage: Decimal
+    impact: Decimal
+    variable_total: Decimal
     cost_kind: str = "estimate"
 
 
@@ -244,6 +279,51 @@ class CostEngine:
             "1.5x": self.estimate(trade, scenario_multiplier=Decimal("1.5")),
             "2.0x": self.estimate(trade, scenario_multiplier=Decimal("2.0")),
         }
+
+    def estimate_fill(
+        self,
+        fill: DeliveryFill,
+        *,
+        include_dp_charge: bool = True,
+        scenario_multiplier: Decimal = Decimal(1),
+    ) -> FillCostBreakdown:
+        """Estimate one delivery fill with component-level paise rounding."""
+        if scenario_multiplier <= 0:
+            raise CostError("scenario_invalid", "Scenario multiplier must be positive")
+        rates = self.config.rates
+        turnover = _money(Decimal(fill.quantity) * fill.price)
+        brokerage = _money(turnover * rates.brokerage_rate)
+        stt_rate = rates.stt_buy_rate if fill.side == "BUY" else rates.stt_sell_rate
+        stt = _money(turnover * stt_rate)
+        exchange = _money(turnover * rates.exchange_transaction_rate)
+        sebi = _money(turnover * rates.sebi_turnover_rate)
+        gst = _money((brokerage + exchange + sebi) * rates.gst_rate)
+        stamp = _money(turnover * rates.stamp_duty_buy_rate) if fill.side == "BUY" else Decimal(0)
+        dp = (
+            _money(rates.dp_charge_per_scrip_sell)
+            if fill.side == "SELL" and include_dp_charge
+            else Decimal(0)
+        )
+        spread = _money(turnover * fill.spread_bps / BPS * scenario_multiplier)
+        slippage = _money(turnover * fill.slippage_bps / BPS * scenario_multiplier)
+        impact = _money(turnover * fill.impact_bps / BPS * scenario_multiplier)
+        total = _money(
+            brokerage + stt + exchange + sebi + gst + stamp + dp + spread + slippage + impact
+        )
+        return FillCostBreakdown(
+            self.config.calculation_version,
+            brokerage,
+            stt,
+            exchange,
+            sebi,
+            gst,
+            stamp,
+            dp,
+            spread,
+            slippage,
+            impact,
+            total,
+        )
 
     def allocated_fixed_cost(self, expected_monthly_trades: int) -> Decimal:
         if expected_monthly_trades <= 0:

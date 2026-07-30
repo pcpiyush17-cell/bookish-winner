@@ -23,6 +23,7 @@ from personal_quant.broker.auth import TokenStore
 from personal_quant.broker.contracts import BrokerProfile
 from personal_quant.broker.production import create_production_client
 from personal_quant.clocks import Clock, SystemClock
+from personal_quant.costs import CostConfig, CostEngine, CostError
 from personal_quant.domain.identifiers import InstrumentKey, InstrumentToken
 from personal_quant.domain.money import Money
 from personal_quant.instruments import InstrumentSnapshotStore
@@ -41,7 +42,7 @@ from personal_quant.live_data import (
 )
 from personal_quant.market_calendar import MarketCalendar
 from personal_quant.oms import OrderManagementSystem
-from personal_quant.paper import MarketBar, PaperBroker
+from personal_quant.paper import MarketBar, PaperBroker, PaperDeliveryCostEstimator
 from personal_quant.paper_runtime import (
     DailyReport,
     EvidenceKind,
@@ -335,7 +336,26 @@ def build_operational_runner(config: RunnerConfig) -> OperationalPaperRunner:
     broker = PaperBroker(clock, opening_cash=Money(runtime_config.opening_cash_inr))
     accounting = PortfolioAccounting(database)
     broker.restore_portfolio(*_persisted_paper_portfolio(database, accounting, runtime_config))
-    oms = OrderManagementSystem(database, broker, clock, accounting)
+    try:
+        cost_estimator = PaperDeliveryCostEstimator(
+            CostEngine(CostConfig.load(runtime_config.cost_config)),
+            runtime_config.spread_bps,
+            runtime_config.slippage_bps,
+            runtime_config.impact_bps,
+        )
+    except CostError:
+        raise PaperRunnerError(
+            "paper_cost_config_invalid",
+            "Versioned paper cost configuration cannot be loaded",
+        ) from None
+    oms = OrderManagementSystem(
+        database,
+        broker,
+        clock,
+        accounting,
+        cost_estimator.estimate,
+        broker.apply_cost,
+    )
     strategy = PaperStrategyAdapter(
         StrategyRunner(
             BaselineMomentumStrategy(BaselineMomentumConfig.load(config.strategy_config)), "paper"

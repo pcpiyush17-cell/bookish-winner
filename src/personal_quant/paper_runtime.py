@@ -83,6 +83,10 @@ class RuntimeConfig(BaseModel):
     tick_size_inr: Decimal = Field(gt=0)
     expected_gross_edge_inr: Decimal = Field(gt=0)
     expected_costs_inr: Decimal = Field(ge=0)
+    cost_config: Path
+    spread_bps: Decimal = Field(ge=0)
+    slippage_bps: Decimal = Field(ge=0)
+    impact_bps: Decimal = Field(ge=0)
     maximum_price_deviation_pct: Decimal = Field(gt=0)
     stop_loss_pct: Decimal = Field(gt=0, lt=100)
     cancel_open_orders_on_shutdown: bool
@@ -94,7 +98,7 @@ class RuntimeConfig(BaseModel):
     def evidence(cls, value: object) -> object:
         return EvidenceKind(value) if isinstance(value, str) else value
 
-    @field_validator("report_root", "lock_path", mode="before")
+    @field_validator("report_root", "lock_path", "cost_config", mode="before")
     @classmethod
     def paths(cls, value: object) -> object:
         return Path(value) if isinstance(value, str) else value
@@ -104,6 +108,9 @@ class RuntimeConfig(BaseModel):
         "tick_size_inr",
         "expected_gross_edge_inr",
         "expected_costs_inr",
+        "spread_bps",
+        "slippage_bps",
+        "impact_bps",
         "maximum_price_deviation_pct",
         "stop_loss_pct",
         mode="before",

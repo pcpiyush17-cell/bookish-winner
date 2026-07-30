@@ -7,12 +7,13 @@ import pytest
 
 from personal_quant.accounting import PortfolioAccounting
 from personal_quant.clocks import SimulatedClock
+from personal_quant.costs import CostConfig, CostEngine
 from personal_quant.domain.identifiers import InstrumentKey
 from personal_quant.domain.money import Money
 from personal_quant.live_data import FeedState, HealthDecision
 from personal_quant.market_calendar import MarketCalendar
 from personal_quant.oms import OrderManagementSystem, OrderState, StoredOrder
-from personal_quant.paper import MarketBar, PaperBroker
+from personal_quant.paper import MarketBar, PaperBroker, PaperDeliveryCostEstimator
 from personal_quant.paper_runtime import (
     EvidenceKind,
     PaperRuntime,
@@ -62,10 +63,6 @@ def make_runtime(
     db = database or Database(tmp_path / "trading.sqlite")
     MigrationRunner(db).apply_all()
     clock = SimulatedClock(NOW)
-    broker = PaperBroker(clock)
-    accounting = PortfolioAccounting(db)
-    oms = OrderManagementSystem(db, broker, clock, accounting)
-    selected_feed = feed or Feed()
     config = RuntimeConfig.load(RUNTIME_CONFIG).model_copy(
         update={
             "evidence_kind": evidence,
@@ -74,6 +71,23 @@ def make_runtime(
             "lock_path": tmp_path / lock_name,
         }
     )
+    broker = PaperBroker(clock)
+    accounting = PortfolioAccounting(db)
+    estimator = PaperDeliveryCostEstimator(
+        CostEngine(CostConfig.load(config.cost_config)),
+        config.spread_bps,
+        config.slippage_bps,
+        config.impact_bps,
+    )
+    oms = OrderManagementSystem(
+        db,
+        broker,
+        clock,
+        accounting,
+        estimator.estimate,
+        broker.apply_cost,
+    )
+    selected_feed = feed or Feed()
     strategy = PaperStrategyAdapter(
         StrategyRunner(
             BaselineMomentumStrategy(BaselineMomentumConfig.load(STRATEGY_CONFIG)),
@@ -126,6 +140,8 @@ def test_full_runtime_lifecycle_executes_paper_fill_and_writes_evidence(tmp_path
     assert runtime.broker.get_trades()
     position = runtime.accounting.position(INSTRUMENT)
     assert position is not None and position.quantity == 10
+    assert runtime.accounting.cost_total().amount > 0
+    assert runtime.accounting.cash_balance() == runtime.broker.get_funds().available_cash
 
     report = runtime.shutdown()
     assert report.clean_shutdown
@@ -134,6 +150,7 @@ def test_full_runtime_lifecycle_executes_paper_fill_and_writes_evidence(tmp_path
     assert report.risk_approved == 1
     assert report.orders_submitted == 1
     assert report.fills == 1
+    assert report.variable_costs.amount > 0
     assert_runtime_state(runtime, RuntimeState.STOPPED)
     assert runtime_progress(runtime.database).successful_dry_sessions == 1
     connection = runtime.database.connect(read_only=True)

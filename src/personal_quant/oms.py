@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -12,7 +13,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from personal_quant.accounting import Fill as AccountingFill
-from personal_quant.accounting import PortfolioAccounting
+from personal_quant.accounting import FillCost, PortfolioAccounting
 from personal_quant.broker.contracts import (
     Broker,
     BrokerCancelRequest,
@@ -153,6 +154,10 @@ class OrderManagementSystem:
     broker: Broker
     clock: Clock
     accounting: PortfolioAccounting | None = None
+    fill_cost_estimator: (
+        Callable[[AccountingFill, PortfolioAccounting], tuple[FillCost, ...]] | None
+    ) = None
+    cost_debiter: Callable[[Money], None] | None = None
     minimum_modify_wait: timedelta = timedelta(seconds=5)
 
     def register(self, intent: OmsIntent, risk_decision_id: UUID) -> StoredOrder:
@@ -527,17 +532,24 @@ class OrderManagementSystem:
                 (new_filled, _paise(average), _aware_iso(self.clock.now()), str(order_id)),
             )
         if self.accounting is not None:
-            self.accounting.apply_fill(
-                AccountingFill(
-                    FillId(str(trade.fill_id)),
-                    trade.broker_order_id,
-                    trade.instrument,
-                    trade.side,
-                    trade.quantity,
-                    trade.price,
-                    trade.filled_at,
-                )
+            accounting_fill = AccountingFill(
+                FillId(str(trade.fill_id)),
+                trade.broker_order_id,
+                trade.instrument,
+                trade.side,
+                trade.quantity,
+                trade.price,
+                trade.filled_at,
             )
+            costs = (
+                self.fill_cost_estimator(accounting_fill, self.accounting)
+                if self.fill_cost_estimator is not None
+                else ()
+            )
+            applied = self.accounting.apply_fill(accounting_fill, costs)
+            if applied and costs and self.cost_debiter is not None:
+                total = sum((item.amount.amount for item in costs), Decimal(0))
+                self.cost_debiter(Money(total))
         refreshed = self.get(order_id)
         target = (
             OrderState.FILLED

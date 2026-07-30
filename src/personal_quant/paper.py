@@ -6,7 +6,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
+from uuid import UUID, uuid5
+from zoneinfo import ZoneInfo
 
+from personal_quant.accounting import Fill, FillCost, PortfolioAccounting
 from personal_quant.broker.contracts import (
     BrokerCancelRequest,
     BrokerHolding,
@@ -22,8 +25,65 @@ from personal_quant.broker.contracts import (
 )
 from personal_quant.broker.mock import MockBroker
 from personal_quant.clocks import Clock
+from personal_quant.costs import CostEngine, DeliveryFill
 from personal_quant.domain.identifiers import BrokerOrderId, InstrumentKey
 from personal_quant.domain.money import Money
+
+PAPER_COST_NAMESPACE = UUID("6d72d249-440c-4f78-9c67-0b58ac0c2118")
+_INDIA = ZoneInfo("Asia/Kolkata")
+
+
+@dataclass(frozen=True, slots=True)
+class PaperDeliveryCostEstimator:
+    engine: CostEngine
+    spread_bps: Decimal
+    slippage_bps: Decimal
+    impact_bps: Decimal
+
+    def estimate(self, fill: Fill, accounting: PortfolioAccounting) -> tuple[FillCost, ...]:
+        include_dp = fill.side is not OrderSide.SELL or not accounting.has_cost_component_on_date(
+            fill.instrument_key,
+            "dp_charge",
+            fill.occurred_at.astimezone(_INDIA).date(),
+            _INDIA,
+        )
+        breakdown = self.engine.estimate_fill(
+            DeliveryFill(
+                fill.quantity,
+                fill.price.amount,
+                fill.side.value,
+                self.spread_bps,
+                self.slippage_bps,
+                self.impact_bps,
+            ),
+            include_dp_charge=include_dp,
+        )
+        components = (
+            ("brokerage", breakdown.brokerage),
+            ("stt", breakdown.stt),
+            ("exchange_transaction_charge", breakdown.exchange_transaction_charge),
+            ("sebi_turnover_charge", breakdown.sebi_turnover_charge),
+            ("gst", breakdown.gst),
+            ("stamp_duty", breakdown.stamp_duty),
+            ("dp_charge", breakdown.dp_charge),
+            ("spread", breakdown.spread),
+            ("slippage", breakdown.slippage),
+            ("impact", breakdown.impact),
+        )
+        return tuple(
+            FillCost(
+                uuid5(
+                    PAPER_COST_NAMESPACE,
+                    f"{fill.fill_id}:{component}:{breakdown.calculation_version}",
+                ),
+                component,
+                Money(amount),
+                breakdown.cost_kind,
+                breakdown.calculation_version,
+            )
+            for component, amount in components
+            if amount > 0
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +153,9 @@ class PaperBroker:
         positions: Mapping[InstrumentKey, tuple[int, Money]],
     ) -> None:
         self.broker.restore_portfolio(cash, positions)
+
+    def apply_cost(self, amount: Money) -> None:
+        self.broker.apply_cost(amount)
 
     def get_profile(self) -> BrokerProfile:
         return self.broker.get_profile()

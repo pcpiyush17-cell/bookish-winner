@@ -104,6 +104,12 @@ class MockBroker:
         self._cash = cash
         self._positions = dict(positions)
 
+    def apply_cost(self, amount: Money) -> None:
+        """Debit an externally calculated paper cost from simulated cash."""
+        if amount.amount < 0:
+            raise BrokerError("paper_cost_invalid", "Paper cost cannot be negative")
+        self._cash = self._cash - amount
+
     def place_order(self, request: BrokerOrderRequest) -> BrokerOrderAck:
         existing = self._client_orders.get(request.client_order_id)
         if existing is not None:

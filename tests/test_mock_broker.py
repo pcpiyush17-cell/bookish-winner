@@ -77,6 +77,14 @@ def test_cancel_preserves_partial_fill() -> None:
     assert mock.get_positions()[0].quantity == 1
 
 
+def test_external_paper_cost_debits_simulated_cash() -> None:
+    mock, _ = broker()
+    mock.apply_cost(Money.from_value("12.34"))
+    assert mock.get_funds().available_cash == Money.from_value("9987.66")
+    with pytest.raises(BrokerError, match="cannot be negative"):
+        mock.apply_cost(Money.from_value("-0.01"))
+
+
 def test_rejection_and_unknown_response_are_deterministic() -> None:
     mock, _ = broker()
     mock.reject_next_order("fixture rejection")
