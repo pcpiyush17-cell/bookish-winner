@@ -26,3 +26,12 @@
 Record the incident time, disconnect code, retry count, gap interval, restored subscriptions,
 first fresh quote per instrument, reconciliation outcome, and operator decision. Use deterministic
 replay to reproduce the recorded interval before closing a material incident.
+
+## Kite tick identity
+
+Kite ticks do not provide a broker sequence number. Their exchange timestamps can also repeat
+within one second while price, volume, or depth changes. For these ticks, the collector uses the
+canonical raw market payload as the identity discriminator: exact retransmissions remain
+idempotent, while distinct same-second updates are accepted. Feeds that provide a broker sequence
+retain the stricter instrument/timestamp/sequence identity, and a changed payload for the same
+sequence is quarantined as a conflicting duplicate.

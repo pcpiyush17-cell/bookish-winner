@@ -75,7 +75,7 @@ def raw_tick(
     token: InstrumentToken,
     at: datetime,
     *,
-    sequence: int,
+    sequence: int | None,
     price: str = "100",
 ) -> RawTick:
     return RawTick(
@@ -208,6 +208,25 @@ def test_heartbeat_staleness_duplicates_conflicts_and_ordering_fail_closed(
     decision = value.health()
     assert not decision.healthy
     assert "feed_stale" in decision.reasons
+
+
+def test_same_second_kite_ticks_without_sequence_use_payload_identity(tmp_path: Path) -> None:
+    _, _, received, _, value = collector(tmp_path)
+    make_healthy(value)
+    first = raw_tick(TOKEN_ONE, NOW, sequence=None, price="101")
+    changed = raw_tick(TOKEN_ONE, NOW, sequence=None, price="102")
+
+    accepted_first = value.on_ticks((first,))
+    accepted_changed = value.on_ticks((changed,))
+    exact_retransmission = value.on_ticks((first,))
+
+    assert len(accepted_first) == len(accepted_changed) == 1
+    assert accepted_first[0].event_id != accepted_changed[0].event_id
+    assert exact_retransmission == ()
+    assert [tick.last_price for tick in received[-2:]] == [
+        Money.from_value("101"),
+        Money.from_value("102"),
+    ]
 
 
 def test_recorded_session_replays_deterministically_at_any_speed(tmp_path: Path) -> None:

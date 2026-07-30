@@ -597,12 +597,16 @@ def new_recorder(root: Path, clock: Clock) -> SessionRecorder:
 
 
 def _tick_identity(tick: RawTick) -> str:
-    sequence = str(tick.broker_sequence) if tick.broker_sequence is not None else "none"
+    discriminator = (
+        str(tick.broker_sequence)
+        if tick.broker_sequence is not None
+        else f"payload:{_hash(asdict(tick))}"
+    )
     return "|".join(
         (
             str(int(tick.instrument_token)),
             tick.exchange_timestamp.astimezone(UTC).isoformat(),
-            sequence,
+            discriminator,
         )
     )
 
