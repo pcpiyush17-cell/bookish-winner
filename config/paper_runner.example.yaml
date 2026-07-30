@@ -5,7 +5,7 @@ runtime_config: config/paper_runtime.example.yaml
 risk_config: config/risk/conservative_10k.yaml
 strategy_config: config/strategies/baseline_momentum_v1.yaml
 calendar_config: config/calendars/nse_equity_2026.yaml
-instrument_snapshot_directory: data/reference/instruments/provider=zerodha/date=2026-07-29
+instrument_snapshot_directory: data/reference/instruments/provider=zerodha/date=2026-07-30
 approved_instruments:
   - NSE:INFY
 recording_root: data/recordings

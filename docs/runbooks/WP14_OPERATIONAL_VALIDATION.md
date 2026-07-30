@@ -1,18 +1,32 @@
 # WP-14 operational validation runbook
 
-Status: **RUNNER IMPLEMENTED; OPERATOR READINESS REHEARSAL PENDING**.
+Status: **READINESS REHEARSAL PASSED; OPERATIONAL EVIDENCE 0/10 DRY, 0/30 FORMAL**.
 
 The lifecycle engine, paper broker, evidence schema, immutable reports, and authenticated
-current-data runner are implemented. Do not begin counting sessions until the readiness rehearsal
-below passes. Tests, replay, accelerated clocks, manually inserted database rows, copied reports,
+current-data runner are implemented. The non-counting readiness rehearsal passed on 2026-07-30.
+Tests, rehearsal data, replay, accelerated clocks, manually inserted database rows, copied reports,
 or repeated runs on one market date are never operational evidence.
+
+## Readiness rehearsal result
+
+The isolated 2026-07-30 rehearsal ran for approximately 18 minutes 45 seconds from merged `dev`
+commit `f1c68aed444474271386a511e951799156ac177f`. It accepted 1,468 Kite ticks, including 396
+groups of distinct same-exchange-timestamp updates, with zero data-quality violations. The raw
+recording contained 1,471 events and matched SHA-256
+`09eabd5a3d64feed7a57f8938296abf4beda3442098c4f44c7350d744d05de48`.
+
+The session used `PaperBroker` exclusively, completed five simulated fills, applied the versioned
+delivery-cost model, reconciled cash and positions, wrote its immutable report, passed database
+integrity, released its runtime lock, and shut down cleanly. Production order routing remained
+unreachable. Its isolated database, reports, and recording are non-counting rehearsal artifacts
+and must never be copied into operational evidence paths.
 
 ## Read-only status
 
 Initialize the operational database once, then inspect its evidence without changing it:
 
 ```powershell
-uv run pq storage-init --path F:\Quant_Trader\state\trading.sqlite
+uv run pq init-db --path F:\Quant_Trader\state\trading.sqlite
 uv run pq paper-evidence-status --path F:\Quant_Trader\state\trading.sqlite
 ```
 
@@ -21,7 +35,7 @@ reconciliation, required pre-flight/bar/shutdown snapshots, report identity, and
 session of each evidence kind per market date. It will continue to show `PENDING` until the
 requirements are genuinely met.
 
-## Readiness rehearsal before session 1
+## Readiness rehearsal checklist
 
 - Review `config/paper_runner.example.yaml`, update the dated instrument snapshot directory, and
   confirm every state/data/report path resolves under `F:\Quant_Trader`.
@@ -44,8 +58,8 @@ requirements are genuinely met.
   ```
 
 - Use Ctrl+C to rehearse graceful shutdown, then verify the recording manifest, runtime report,
-  released lock, database integrity, and evidence auditor output. A rehearsal is not automatically
-  countable; the operator must designate beforehand whether it is the first scheduled dry session.
+  released lock, database integrity, and evidence auditor output. Rehearsals do not count; the
+  first operational dry session must be explicitly designated before it starts.
 
 ## Evidence sequence
 
