@@ -10,7 +10,8 @@ including portfolio accounting, a
 fail-closed pre-trade risk engine, a persistent paper-trading OMS, a deterministic
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
 collection. It has no production broker adapter and cannot place, modify, or cancel real-money
-orders. WP-14 operational acceptance remains pending real session evidence.
+orders. The WP-14 non-counting readiness rehearsal passed on 2026-07-30; operational acceptance
+remains pending 10 dry and 30 formal sessions of real evidence.
 
 ## Requirements
 
@@ -263,9 +264,9 @@ uv run pq paper-evidence-status --path F:\Quant_Trader\state\trading.sqlite
 ```
 
 The [`WP-14 operational validation runbook`](docs/runbooks/WP14_OPERATIONAL_VALIDATION.md)
-requires an operator readiness rehearsal before collection begins. The current-data runner routes
-all intents exclusively to `PaperBroker`. Tests, replay, accelerated clocks, and manually inserted
-rows never count as operational evidence.
+records the passed 2026-07-30 operator readiness rehearsal and governs evidence collection. The
+current-data runner routes all intents exclusively to `PaperBroker`. Tests, rehearsal artifacts,
+replay, accelerated clocks, and manually inserted rows never count as operational evidence.
 
 ## Local monitoring and controls
 
@@ -327,7 +328,7 @@ excluded by `.gitignore`.
 ## Current limitations
 
 - The production-authenticated WebSocket runner is restricted to current-data input and
-  `PaperBroker`; its operator readiness rehearsal and WP-14 evidence collection remain pending.
+  `PaperBroker`; its readiness rehearsal passed, while WP-14 evidence collection remains pending.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
 - The WP-14 requirement for ten dry sessions followed by thirty formal paper sessions has not
