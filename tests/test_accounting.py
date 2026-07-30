@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -12,8 +13,10 @@ from personal_quant.accounting import (
     PortfolioAccounting,
 )
 from personal_quant.broker.contracts import OrderSide
+from personal_quant.costs import CostConfig, CostEngine
 from personal_quant.domain.identifiers import BrokerOrderId, FillId, InstrumentKey
 from personal_quant.domain.money import Money
+from personal_quant.paper import PaperDeliveryCostEstimator
 from personal_quant.storage.database import Database
 from personal_quant.storage.migrations import MigrationRunner
 
@@ -71,6 +74,34 @@ def test_complete_trade_cycle_balances_and_duplicate_is_idempotent(tmp_path: Pat
     assert accounting.cash_balance() == Money.from_value("10198.75")
     assert accounting.reconcile_cash(Money.from_value("10198.75")) == ()
     assert accounting.reconcile_cash(Money.from_value("1"))[0].layer == "cash"
+
+
+def test_paper_delivery_costs_are_versioned_and_dp_is_once_per_day(tmp_path: Path) -> None:
+    accounting = service(tmp_path)
+    estimator = PaperDeliveryCostEstimator(
+        CostEngine(CostConfig.load(Path("config/costs/zerodha_nse_delivery_2026-07-28.yaml"))),
+        spread_bps=Decimal("1"),
+        slippage_bps=Decimal("1"),
+        impact_bps=Decimal(0),
+    )
+    buy = fill("paper-buy", OrderSide.BUY, 2, "100")
+    accounting.apply_fill(buy, estimator.estimate(buy, accounting))
+    first_sell = fill("paper-sell-1", OrderSide.SELL, 1, "101")
+    accounting.apply_fill(first_sell, estimator.estimate(first_sell, accounting))
+    second_sell = fill("paper-sell-2", OrderSide.SELL, 1, "102")
+    accounting.apply_fill(second_sell, estimator.estimate(second_sell, accounting))
+
+    connection = accounting.database.connect(read_only=True)
+    try:
+        dp_rows = connection.execute(
+            "SELECT calculation_version FROM cost_entries WHERE component='dp_charge'"
+        ).fetchall()
+        cost_kinds = connection.execute("SELECT DISTINCT cost_kind FROM cost_entries").fetchall()
+    finally:
+        connection.close()
+    assert [row[0] for row in dp_rows] == ["zerodha_nse_delivery_2026-07-28_v1"]
+    assert [row[0] for row in cost_kinds] == ["estimate"]
+    assert accounting.cost_total().amount > Decimal("15.34")
 
 
 def test_partial_sale_preserves_cost_basis_and_values_position(tmp_path: Path) -> None:

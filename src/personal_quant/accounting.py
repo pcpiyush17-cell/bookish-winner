@@ -6,10 +6,11 @@ import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 from personal_quant.broker.contracts import OrderSide
 from personal_quant.domain.identifiers import BrokerOrderId, FillId, InstrumentKey
@@ -280,6 +281,31 @@ class PortfolioAccounting:
         finally:
             connection.close()
         return _money_from_paise(int(value))
+
+    def has_cost_component_on_date(
+        self,
+        key: InstrumentKey,
+        component: str,
+        day: date,
+        zone: ZoneInfo,
+    ) -> bool:
+        """Return whether a component was already charged for an instrument's local day."""
+        connection = self.database.connect(read_only=True)
+        try:
+            rows = connection.execute(
+                """
+                SELECT cost_entries.occurred_at
+                FROM cost_entries
+                JOIN fills ON fills.fill_id = cost_entries.fill_id
+                WHERE fills.instrument_key = ? AND cost_entries.component = ?
+                """,
+                (str(key), component),
+            ).fetchall()
+        finally:
+            connection.close()
+        return any(
+            datetime.fromisoformat(str(row[0])).astimezone(zone).date() == day for row in rows
+        )
 
     def reconcile_cash(self, broker_cash: Money) -> tuple[ReconciliationDifference, ...]:
         local = self.cash_balance()

@@ -28,6 +28,10 @@ requirements are genuinely met.
 - Inspect the runner and confirm it constructs `PaperBroker`, not a production broker adapter.
 - Verify account identity and authentication are reads only; all order intents must terminate at
   the paper broker.
+- Confirm the paper runtime loads the dated delivery-cost configuration and explicit spread,
+  slippage, and impact assumptions. Every paper fill must debit both simulated broker cash and the
+  accounting ledger with versioned estimated components; DP charges are applied once per scrip per
+  market date.
 - Record the Git commit, release-manifest hash, strategy-manifest hash, and config fingerprint.
 - Rehearse WebSocket reconnect, graceful shutdown, kill switch, database backup, and restart
   recovery.

@@ -7,6 +7,7 @@ from personal_quant.costs import (
     CostConfig,
     CostEngine,
     CostError,
+    DeliveryFill,
     DeliveryTrade,
     FixedBpsModel,
     HalfSpreadPlusBpsModel,
@@ -57,6 +58,51 @@ def test_stress_scenarios_scale_execution_cost_only() -> None:
     assert scenarios["1.5x"].variable_total == Decimal("85.87")
     assert scenarios["2.0x"].variable_total == Decimal("101.62")
     assert scenarios["2.0x"].stt == scenarios["base"].stt
+
+
+def test_delivery_fill_costs_split_buy_and_sell_components() -> None:
+    cost_engine = engine()
+    buy = cost_engine.estimate_fill(
+        DeliveryFill(
+            100,
+            Decimal("100"),
+            "BUY",
+            spread_bps=Decimal("10"),
+            slippage_bps=Decimal("5"),
+        )
+    )
+    sell = cost_engine.estimate_fill(
+        DeliveryFill(
+            100,
+            Decimal("110"),
+            "SELL",
+            spread_bps=Decimal("10"),
+            slippage_bps=Decimal("5"),
+        )
+    )
+    assert buy.variable_total == Decimal("26.88")
+    assert buy.stamp_duty == Decimal("1.50")
+    assert buy.dp_charge == 0
+    assert sell.variable_total == Decimal("43.25")
+    assert sell.stamp_duty == 0
+    assert sell.dp_charge == Decimal("15.34")
+    assert (
+        cost_engine.estimate_fill(
+            DeliveryFill(1, Decimal("110"), "SELL"), include_dp_charge=False
+        ).dp_charge
+        == 0
+    )
+
+
+def test_delivery_fill_cost_inputs_fail_closed() -> None:
+    with pytest.raises(CostError, match="BUY or SELL"):
+        DeliveryFill(1, Decimal("100"), "SHORT")
+    with pytest.raises(CostError, match="positive"):
+        DeliveryFill(0, Decimal("100"), "BUY")
+    with pytest.raises(CostError, match="positive"):
+        engine().estimate_fill(
+            DeliveryFill(1, Decimal("100"), "BUY"), scenario_multiplier=Decimal(0)
+        )
 
 
 def test_execution_models_are_explicit() -> None:
