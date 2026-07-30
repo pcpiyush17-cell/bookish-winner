@@ -14,7 +14,7 @@ from personal_quant.cli import app
 from personal_quant.domain.identifiers import InstrumentKey, InstrumentToken
 from personal_quant.domain.money import Money
 from personal_quant.instruments import InstrumentSnapshotStore
-from personal_quant.live_data import LiveTick
+from personal_quant.live_data import LiveTick, WebSocketMode
 from personal_quant.paper_runner import (
     BarAggregator,
     PaperRunnerError,
@@ -308,6 +308,7 @@ def test_operational_assembly_runs_one_clean_temp_session_with_paper_broker_only
 
     assert runner.runtime.state is RuntimeState.STOPPED
     assert runner.runtime.broker.__class__.__name__ == "PaperBroker"
+    assert runner.collector.config.mode is WebSocketMode.FULL
     assert report.clean_shutdown is True
     assert recording.manifest_path.exists()
     assert RuntimeConfig.load(runtime_path).mode == "paper"

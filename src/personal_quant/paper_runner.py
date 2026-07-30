@@ -341,7 +341,7 @@ def build_operational_runner(config: RunnerConfig) -> OperationalPaperRunner:
             BaselineMomentumStrategy(BaselineMomentumConfig.load(config.strategy_config)), "paper"
         )
     )
-    collector_config = CollectorConfig(approved, mode=WebSocketMode.QUOTE)
+    collector_config = CollectorConfig(approved, mode=WebSocketMode.FULL)
     from kiteconnect import KiteTicker  # type: ignore[import-untyped]
 
     ticker = cast(CallbackTicker, KiteTicker(api_key, token.access_token))
