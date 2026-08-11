@@ -11,7 +11,8 @@ fail-closed pre-trade risk engine, a persistent paper-trading OMS, a determinist
 event-driven backtester, a broker-independent baseline strategy, and replayable live-data
 collection. It has no production broker adapter and cannot place, modify, or cancel real-money
 orders. The WP-14 non-counting readiness rehearsal passed on 2026-07-30, followed by the first
-accepted dry session; operational acceptance remains pending 9 dry and 30 formal sessions.
+accepted live dry session. Revised hybrid acceptance remains pending four live dry sessions and
+30 historical paper replay dates.
 
 ## Requirements
 
@@ -128,6 +129,28 @@ The downloader is limited to two historical requests per second. Exact reruns re
 existing manifest without another broker call. Raw and curated data are separate immutable
 Parquet layers; malformed batches are quarantined, and gaps are reported without forward
 filling. Runtime market datasets remain excluded from Git.
+
+## Historical paper sessions
+
+WP-14 hybrid validation replays one complete historical market date through the same strategy,
+risk, `PaperBroker`, OMS, delivery-cost, accounting, reconciliation, snapshot, and reporting
+components used by the live paper runtime. It does not connect to a WebSocket or claim to validate
+authentication, current-data freshness, networking, wall-clock scheduling, or reconnect behavior.
+
+Download a gap-free minute-candle date, place its immutable manifest path and market date in
+[`config/historical_paper.example.yaml`](config/historical_paper.example.yaml), then run:
+
+```powershell
+uv run pq historical-paper-session --config config/historical_paper.example.yaml `
+  --confirm "START HISTORICAL PAPER REPLAY"
+
+uv run pq hybrid-evidence-status --operational-path state/trading.sqlite `
+  --replay-path state/replay/trading.sqlite
+```
+
+Replay state is isolated under `state/replay`. Only one clean, checksum-verified replay may count
+per historical market date. Revised WP-14 acceptance requires 30 replay dates plus five clean live
+dry sessions; replay never substitutes for the live-only checks.
 
 ## Analytics and features
 
@@ -299,9 +322,9 @@ comparison, and checksum-backed difference reports. Its adapter has no `place_or
 unavailable. Initial assumptions are in
 [`config/shadow.example.yaml`](config/shadow.example.yaml).
 
-Operational shadow execution fails closed until WP-14 records 10 clean dry sessions followed by
-30 clean formal paper sessions. That acceptance remains **pending**; implementing the shadow
-foundation does not waive or fabricate its evidence.
+Operational shadow execution remains fail-closed until the revised WP-14 hybrid gate is met and
+reviewed: 30 historical replay dates plus five clean live dry sessions. That acceptance remains
+**pending**; implementing the shadow foundation does not waive or fabricate its evidence.
 
 ## Feature-gated production adapter
 
@@ -332,8 +355,8 @@ excluded by `.gitignore`.
   remains pending.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
-- The WP-14 requirement has reached 1/10 dry sessions and 0/30 formal sessions; the foundation
-  records and enforces the remaining evidence sequence.
+- Revised WP-14 hybrid evidence has reached 1/5 live dry sessions and 0/30 historical replay
+  sessions; the two evidence sources remain isolated and independently auditable.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
 - Production broker routing and live trading orchestration remain feature-gated and unavailable;

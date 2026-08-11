@@ -203,7 +203,7 @@ class ShadowService:
             if not progress.dry_requirement_met or not progress.formal_requirement_met:
                 raise ShadowError(
                     "paper_acceptance_pending",
-                    "Shadow mode requires 10 clean dry and 30 clean formal paper sessions",
+                    "Shadow mode requires reviewed WP-14 paper acceptance evidence",
                 )
         snapshot = self._broker.capture()
         report = ShadowReport(

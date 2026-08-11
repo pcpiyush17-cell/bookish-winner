@@ -23,7 +23,7 @@ from personal_quant.domain.identifiers import InstrumentKey, InstrumentToken
 from personal_quant.market_calendar import MarketCalendar
 
 MARKET_ZONE = ZoneInfo("Asia/Kolkata")
-INTERVAL_MINUTES = {"15minute": 15, "day": 1440}
+INTERVAL_MINUTES = {"minute": 1, "15minute": 15, "day": 1440}
 
 
 class HistoricalDataError(ValueError):
@@ -42,7 +42,9 @@ class HistoricalRequest:
 
     def __post_init__(self) -> None:
         if self.interval not in INTERVAL_MINUTES:
-            raise HistoricalDataError("interval_unsupported", "Only day and 15minute are enabled")
+            raise HistoricalDataError(
+                "interval_unsupported", "Only minute, 15minute, and day are enabled"
+            )
         if any(
             value.tzinfo is None or value.utcoffset() is None for value in (self.start, self.end)
         ):
@@ -241,11 +243,11 @@ def _validate_candle(
         raise HistoricalDataError("candle_ohlc_invalid", "OHLC bounds are inconsistent")
     if not calendar.is_trading_day(timestamp.date()):
         raise HistoricalDataError("candle_session_invalid", "Candle is outside an exchange session")
-    if request.interval == "15minute":
+    if request.interval in {"minute", "15minute"}:
         session = calendar.session_times(timestamp.date())
         assert session is not None
         if (
-            timestamp.minute % 15
+            timestamp.minute % INTERVAL_MINUTES[request.interval]
             or timestamp.second
             or not (session.market_open <= timestamp.time() < session.market_close)
         ):
@@ -283,7 +285,7 @@ def _find_gaps(
                 close = datetime.combine(day, session.market_close, MARKET_ZONE)
                 while cursor < close:
                     expected.append(cursor)
-                    cursor += timedelta(minutes=15)
+                    cursor += timedelta(minutes=INTERVAL_MINUTES[request.interval])
         day += timedelta(days=1)
     return [item.isoformat() for item in expected if item not in actual]
 

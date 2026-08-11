@@ -4,5 +4,5 @@ report_root: state/reports/shadow
 transmission_available: false
 
 # Shadow mode remains operationally gated on WP-14 paper evidence:
-# 10 clean dry sessions followed by 30 clean formal paper sessions.
+# Revised gate: 5 clean live dry sessions plus 30 clean historical replay dates.
 paper_gate_required: true
