@@ -68,6 +68,14 @@ class SpecialSession(BaseModel):
         return self
 
 
+class SessionChange(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    effective_from: date
+    name: str = Field(min_length=1)
+    times: SessionTimes
+
+
 class CalendarConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -82,8 +90,11 @@ class CalendarConfig(BaseModel):
     regular_session: SessionTimes
     holidays: tuple[date, ...]
     special_sessions: tuple[SpecialSession, ...] = ()
+    session_changes: tuple[SessionChange, ...] = ()
 
-    @field_validator("source_urls", "holidays", "special_sessions", mode="before")
+    @field_validator(
+        "source_urls", "holidays", "special_sessions", "session_changes", mode="before"
+    )
     @classmethod
     def freeze_sequences(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
@@ -94,7 +105,11 @@ class CalendarConfig(BaseModel):
             ZoneInfo(self.timezone)
         except Exception as error:
             raise ValueError("timezone must be an IANA timezone") from error
-        dates = [*self.holidays, *(item.session_date for item in self.special_sessions)]
+        dates = [
+            *self.holidays,
+            *(item.session_date for item in self.special_sessions),
+            *(item.effective_from for item in self.session_changes),
+        ]
         if any(item.year != self.year for item in dates):
             raise ValueError("all dates must belong to the calendar year")
         if len(self.holidays) != len(set(self.holidays)):
@@ -102,6 +117,9 @@ class CalendarConfig(BaseModel):
         special_dates = [item.session_date for item in self.special_sessions]
         if len(special_dates) != len(set(special_dates)):
             raise ValueError("special session dates must be unique")
+        change_dates = [item.effective_from for item in self.session_changes]
+        if change_dates != sorted(set(change_dates)):
+            raise ValueError("session changes must be unique and ordered")
         return self
 
 
@@ -127,7 +145,11 @@ class MarketCalendar:
             return special.times if special.status == "confirmed" else None
         if day.weekday() >= 5 or day in self.config.holidays:
             return None
-        return self.config.regular_session
+        change = next(
+            (item for item in reversed(self.config.session_changes) if item.effective_from <= day),
+            None,
+        )
+        return change.times if change is not None else self.config.regular_session
 
     def is_trading_day(self, day: date) -> bool:
         return self.session_times(day) is not None

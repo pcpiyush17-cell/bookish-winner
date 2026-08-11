@@ -26,6 +26,13 @@ def test_market_and_strategy_windows_are_timezone_aware() -> None:
         calendar.is_market_open(datetime(2026, 7, 28, 10))
 
 
+def test_calendar_applies_closing_auction_transition_from_august_third() -> None:
+    calendar = MarketCalendar.load(CONFIG)
+
+    assert calendar.session_times(date(2026, 7, 31)).market_close.isoformat() == "15:30:00"
+    assert calendar.session_times(date(2026, 8, 3)).market_close.isoformat() == "15:15:00"
+
+
 def test_calendar_rejects_dates_outside_version() -> None:
     calendar = MarketCalendar.load(CONFIG)
     with pytest.raises(CalendarError, match="outside"):

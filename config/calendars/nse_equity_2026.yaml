@@ -1,13 +1,15 @@
 schema_version: 1
-calendar_id: nse_equity_2026_v1
+calendar_id: nse_equity_2026_v2
 exchange: NSE
 segment: equity
 timezone: Asia/Kolkata
 year: 2026
-verified_on: 2026-07-28
+verified_on: 2026-08-12
 source_urls:
   - https://www.nseindia.com/resources/exchange-communication-holidays
   - https://nsearchives.nseindia.com/content/circulars/FAOP71777.pdf
+  - https://nsearchives.nseindia.com/content/circulars/CMTR74466.pdf
+  - https://nsearchives.nseindia.com/content/circulars/CMPT74898.pdf
 regular_session:
   pre_open_start: "09:00:00"
   market_open: "09:15:00"
@@ -15,6 +17,16 @@ regular_session:
   strategy_end: "15:15:00"
   market_close: "15:30:00"
   post_close_end: "16:00:00"
+session_changes:
+  - effective_from: 2026-08-03
+    name: Closing Auction Session introduction; continuous market closes at 15:15
+    times:
+      pre_open_start: "09:00:00"
+      market_open: "09:15:00"
+      strategy_start: "09:20:00"
+      strategy_end: "15:15:00"
+      market_close: "15:15:00"
+      post_close_end: "16:00:00"
 holidays:
   - 2026-01-26
   - 2026-03-03
