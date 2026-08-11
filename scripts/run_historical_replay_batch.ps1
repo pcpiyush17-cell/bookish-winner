@@ -78,8 +78,15 @@ try {
             [Parameter(Mandatory = $true)][string[]]$Arguments,
             [Parameter(Mandatory = $true)][string]$Transcript
         )
-        $output = @(& uv run pq @Arguments 2>&1)
-        $exitCode = $LASTEXITCODE
+        $previousErrorPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            $output = @(& uv run pq @Arguments 2>&1)
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorPreference
+        }
         $output | Tee-Object -FilePath $Transcript | Write-Host
         if ($exitCode -ne 0) {
             throw "pq $($Arguments[0]) failed with exit code $exitCode. See $Transcript"

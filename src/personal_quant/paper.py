@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
-from uuid import UUID, uuid5
+from uuid import UUID, uuid4, uuid5
 from zoneinfo import ZoneInfo
 
 from personal_quant.accounting import Fill, FillCost, PortfolioAccounting
@@ -120,7 +120,8 @@ class PaperBroker:
     def __post_init__(self) -> None:
         if not Decimal(0) < self.max_participation <= Decimal(1):
             raise ValueError("paper participation must be within (0, 1]")
-        self.broker = MockBroker(self.clock, self.opening_cash)
+        namespace = f"PAPER-{uuid4().hex.upper()}"
+        self.broker = MockBroker(self.clock, self.opening_cash, id_namespace=namespace)
 
     def process_bar(self, bar: MarketBar) -> tuple[BrokerTrade, ...]:
         fills: list[BrokerTrade] = []

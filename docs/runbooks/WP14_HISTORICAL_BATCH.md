@@ -35,12 +35,17 @@ market date cannot create a second accepted session.
 After the accepted 2026-07-29 Session 1, the completed dates available through 2026-08-11 are:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\run_historical_replay_batch.ps1 `
-  -Dates 2026-07-30 2026-07-31 2026-08-03 2026-08-04 2026-08-05 2026-08-06 2026-08-07 2026-08-10 2026-08-11 `
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+& .\scripts\run_historical_replay_batch.ps1 `
+  -Dates @(
+    "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04", "2026-08-05",
+    "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11"
+  ) `
   -Confirm "RUN CONTROLLED HISTORICAL REPLAY BATCH"
 ```
 
-`ExecutionPolicy Bypass` applies only to this child PowerShell process; it does not change the
+The execution-policy change applies only to the current PowerShell process; it does not change the
 computer or user execution policy.
 
 This creates Sessions 2 through 10 if every date passes. Later completed dates can be supplied to

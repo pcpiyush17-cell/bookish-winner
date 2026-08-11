@@ -44,6 +44,7 @@ class MockBroker:
             products=("CNC",),
         )
     )
+    id_namespace: str = "MOCK"
     limiter: BrokerRateLimiter = field(init=False)
     _orders: dict[BrokerOrderId, BrokerOrder] = field(default_factory=dict, init=False)
     _client_orders: dict[ClientOrderId, BrokerOrderId] = field(default_factory=dict, init=False)
@@ -56,6 +57,8 @@ class MockBroker:
     _timeout_after_submit: bool = field(default=False, init=False)
 
     def __post_init__(self) -> None:
+        if not self.id_namespace or any(character.isspace() for character in self.id_namespace):
+            raise ValueError("mock broker ID namespace must be non-empty and contain no whitespace")
         self._cash = self.opening_cash
         self.limiter = BrokerRateLimiter(self.clock)
 
@@ -116,7 +119,7 @@ class MockBroker:
             order = self._orders[existing]
             return BrokerOrderAck(existing, order.status)
         self.limiter.acquire_new_order()
-        order_id = BrokerOrderId(f"MOCK{self._next_order:08d}")
+        order_id = BrokerOrderId(f"{self.id_namespace}-ORDER-{self._next_order:08d}")
         self._next_order += 1
         status = BrokerOrderStatus.REJECTED if self._reject_reason else BrokerOrderStatus.OPEN
         order = BrokerOrder(
@@ -197,7 +200,7 @@ class MockBroker:
             status=status,
         )
         trade = BrokerTrade(
-            fill_id=FillId(f"FILL{self._next_fill:08d}"),
+            fill_id=FillId(f"{self.id_namespace}-FILL-{self._next_fill:08d}"),
             broker_order_id=order_id,
             instrument=order.instrument,
             side=order.side,
