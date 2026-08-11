@@ -118,8 +118,11 @@ try {
             "--calendar", $Calendar,
             "--root", "data"
         ) -Transcript (Join-Path $dateRoot "02-download.txt")
-        if (-not ($downloadOutput -match "Raw=375 Curated=375 Invalid=0 Gaps=0")) {
-            throw "$dateText did not produce one complete 375-minute NSE session."
+        if (
+            -not ($downloadOutput -match "Historical batch: (complete|already_present)") -or
+            -not ($downloadOutput -match "Raw=([0-9]+) Curated=\1 Invalid=0 Gaps=0")
+        ) {
+            throw "$dateText did not produce a complete gap-free NSE session for its calendar version."
         }
         $manifestLine = @($downloadOutput | Where-Object { $_ -match "^Manifest:\s+(.+)$" })
         if ($manifestLine.Count -ne 1) {

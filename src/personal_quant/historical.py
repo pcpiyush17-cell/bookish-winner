@@ -134,7 +134,7 @@ class HistoricalIngestor:
     clock: Clock
 
     def ingest(self, request: HistoricalRequest) -> IngestionResult:
-        fingerprint = _request_fingerprint(request)
+        fingerprint = _request_fingerprint(request, self.calendar.config.calendar_id)
         manifest_path = self.root / "manifests" / f"{fingerprint}.json"
         if manifest_path.exists():
             return _result_from_manifest(manifest_path, "already_present")
@@ -205,6 +205,7 @@ class HistoricalIngestor:
             "request_fingerprint": fingerprint,
             "requested_at": requested_at.isoformat(),
             "request": _request_record(request),
+            "calendar_id": self.calendar.config.calendar_id,
             "raw_path": str(raw_path),
             "raw_checksum_sha256": _checksum(raw_path),
             "curated_path": str(curated_path) if curated_path else None,
@@ -311,8 +312,9 @@ def _request_record(request: HistoricalRequest) -> dict[str, object]:
     }
 
 
-def _request_fingerprint(request: HistoricalRequest) -> str:
-    return hashlib.sha256(json.dumps(_request_record(request), sort_keys=True).encode()).hexdigest()
+def _request_fingerprint(request: HistoricalRequest, calendar_id: str) -> str:
+    payload = {"request": _request_record(request), "calendar_id": calendar_id}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
 def _write_parquet_once(path: Path, rows: list[dict[str, object]]) -> None:

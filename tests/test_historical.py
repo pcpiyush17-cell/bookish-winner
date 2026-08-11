@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -67,6 +68,8 @@ def test_ingestion_writes_raw_curated_manifest_and_is_idempotent(tmp_path: Path)
     parquet = next((tmp_path / "data" / "curated").rglob("*.parquet"))
     assert pq.ParquetFile(parquet).read().num_rows == 1
     assert first.manifest_path.is_file()
+    manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["calendar_id"] == "nse_equity_2026_v2"
 
 
 def test_invalid_batch_is_quarantined_without_curated_output(tmp_path: Path) -> None:
