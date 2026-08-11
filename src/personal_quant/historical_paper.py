@@ -218,7 +218,10 @@ def load_historical_source(config: HistoricalPaperConfig) -> HistoricalSourceBat
             "historical_source_checksum", "Historical curated data checksum does not match"
         )
     try:
-        records = pq.read_table(curated_path).to_pylist()
+        # Read the immutable file directly. Dataset discovery would also infer Hive partition
+        # columns from paths such as ``interval=minute`` and conflict with the file's interval
+        # column type.
+        records = pq.ParquetFile(curated_path).read().to_pylist()
         bars = tuple(
             MarketBar(
                 InstrumentKey(str(row["instrument_key"])),
