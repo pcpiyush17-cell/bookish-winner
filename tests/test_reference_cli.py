@@ -186,3 +186,38 @@ def test_historical_download_requires_api_key(monkeypatch: pytest.MonkeyPatch) -
     )
     assert result.exit_code == 1
     assert "sandbox_api_key_missing" in result.stderr
+
+
+def test_production_historical_download_rejects_token_identity_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token_path = tmp_path / "production-token.json"
+    TokenStore(token_path).save(
+        access_token="production-access",
+        user_id="OTHER01",
+        authenticated_at="2026-08-11T09:00:00+05:30",
+    )
+    monkeypatch.setenv("KITE_API_KEY", "production-key")
+    monkeypatch.setenv("KITE_EXPECTED_USER_ID", "ALU209")
+
+    result = runner.invoke(
+        app,
+        [
+            "historical-download",
+            "--production",
+            "--instrument",
+            "NSE:INFY",
+            "--start",
+            "2026-07-29",
+            "--end",
+            "2026-07-29",
+            "--snapshot",
+            "missing",
+            "--token-path",
+            str(token_path),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "production_token_identity_mismatch" in result.stderr
+    assert "production-access" not in result.stderr
