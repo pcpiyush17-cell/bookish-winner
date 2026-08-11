@@ -28,7 +28,8 @@ CLI = CliRunner()
 
 def replay_config(tmp_path: Path) -> HistoricalPaperConfig:
     tmp_path.mkdir(parents=True, exist_ok=True)
-    curated = tmp_path / "curated.parquet"
+    curated = tmp_path / "interval=15minute" / "curated.parquet"
+    curated.parent.mkdir(parents=True, exist_ok=True)
     start = datetime(2026, 7, 29, 3, 45, tzinfo=UTC)
     rows = []
     for index in range(25):
