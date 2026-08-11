@@ -471,27 +471,51 @@ def historical_download(
     snapshot: Annotated[Path, typer.Option("--snapshot", help="Dated instrument directory.")],
     interval: Annotated[str, typer.Option("--interval", help="minute, 15minute, or day.")] = "day",
     root: Annotated[Path, typer.Option("--root", help="Historical data root.")] = Path("data"),
-    token_path: Annotated[Path, typer.Option("--token-path", help="Sandbox token file.")] = Path(
-        "state/session/sandbox_access_token.json"
-    ),
+    token_path: Annotated[
+        Path | None, typer.Option("--token-path", help="Session token file; defaults by mode.")
+    ] = None,
+    production: Annotated[
+        bool,
+        typer.Option(
+            "--production",
+            help="Use production historical market data; never enables order routing.",
+        ),
+    ] = False,
     calendar_path: Annotated[Path, typer.Option("--calendar", help="Market calendar YAML.")] = Path(
         "config/calendars/nse_equity_2026.yaml"
     ),
 ) -> None:
     """Download one idempotent, validated historical candle batch."""
-    api_key = os.environ.get("KITE_SANDBOX_API_KEY")
+    api_key_env = "KITE_API_KEY" if production else "KITE_SANDBOX_API_KEY"
+    api_key = os.environ.get(api_key_env)
     if not api_key:
-        _broker_failure(
-            BrokerAuthenticationError(
-                "sandbox_api_key_missing", "KITE_SANDBOX_API_KEY is not configured"
-            )
-        )
+        code = "production_api_key_missing" if production else "sandbox_api_key_missing"
+        _broker_failure(BrokerAuthenticationError(code, f"{api_key_env} is not configured"))
+    selected_token_path = token_path or Path(
+        "state/session/production_access_token.json"
+        if production
+        else "state/session/sandbox_access_token.json"
+    )
     try:
         zone = ZoneInfo("Asia/Kolkata")
         start_at = datetime.combine(date.fromisoformat(start), time.min, zone)
         end_at = datetime.combine(date.fromisoformat(end), time.max, zone)
-        stored = TokenStore(token_path).load()
-        client = create_sandbox_client(api_key)
+        stored = TokenStore(selected_token_path).load()
+        if production:
+            expected_user = os.environ.get("KITE_EXPECTED_USER_ID")
+            if not expected_user:
+                raise BrokerAuthenticationError(
+                    "production_expected_user_missing",
+                    "KITE_EXPECTED_USER_ID is not configured",
+                )
+            if stored.user_id != expected_user:
+                raise BrokerAuthenticationError(
+                    "production_token_identity_mismatch",
+                    "Stored production token does not match the approved identity",
+                )
+            client = create_production_client(api_key)
+        else:
+            client = create_sandbox_client(api_key)
         client.set_access_token(stored.access_token)
         master = InstrumentSnapshotStore(snapshot).load(snapshot)
         key = InstrumentKey(instrument)
@@ -504,6 +528,8 @@ def historical_download(
             root,
             clock,
         ).ingest(request)
+    except BrokerAuthenticationError as error:
+        _broker_failure(error)
     except StorageError as error:
         _storage_failure(error)
     except (InstrumentError, CalendarError, HistoricalDataError, BrokerError) as error:
@@ -518,6 +544,8 @@ def historical_download(
         f"Invalid={result.invalid_rows} Gaps={len(result.gaps)}"
     )
     typer.echo(f"Manifest: {result.manifest_path}")
+    if production:
+        typer.echo("Production historical data used; production order routing remains disabled.")
 
 
 @app.command("cost-estimate")

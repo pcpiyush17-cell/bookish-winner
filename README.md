@@ -121,8 +121,9 @@ closed until NSE publishes its exact timings. Missing market data never infers a
 ## Historical candle ingestion
 
 ```powershell
-uv run pq historical-download --instrument NSE:INFY --start 2026-01-01 --end 2026-07-28 `
-  --interval day --snapshot data/reference/instruments/provider=zerodha/date=YYYY-MM-DD
+uv run pq historical-download --production --instrument NSE:INFY `
+  --start 2026-01-01 --end 2026-07-28 --interval day `
+  --snapshot data/reference/instruments/provider=zerodha/date=YYYY-MM-DD
 ```
 
 The downloader is limited to two historical requests per second. Exact reruns reuse the
