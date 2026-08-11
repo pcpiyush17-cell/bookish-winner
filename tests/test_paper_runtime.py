@@ -29,7 +29,14 @@ from personal_quant.paper_runtime import (
 from personal_quant.risk import RiskConfig, RiskEngine
 from personal_quant.storage.database import Database
 from personal_quant.storage.migrations import MigrationRunner
-from personal_quant.strategy import BaselineMomentumConfig, BaselineMomentumStrategy, StrategyRunner
+from personal_quant.strategy import (
+    BaselineMomentumConfig,
+    BaselineMomentumStrategy,
+    Signal,
+    SignalDirection,
+    SignalPurpose,
+    StrategyRunner,
+)
 from personal_quant.strategy_adapters import PaperStrategyAdapter
 
 NOW = datetime(2026, 7, 29, 4, 0, tzinfo=UTC)  # 09:30 Asia/Kolkata
@@ -184,6 +191,40 @@ def test_stale_feed_kill_switch_and_schedule_block_new_signals(tmp_path: Path) -
 
     KillSwitch(runtime.database).activate("test stop", clock.now())
     assert runtime.process_bar(market_bar(clock, 6)) == ()
+    runtime.shutdown()
+
+
+def test_runtime_allows_only_one_active_order_per_instrument(tmp_path: Path) -> None:
+    runtime, clock, _ = make_runtime(tmp_path)
+    assert runtime.preflight().passed
+    runtime.start()
+    bar = market_bar(clock, 0)
+
+    def signal() -> Signal:
+        return Signal(
+            uuid4(),
+            "test-strategy",
+            "1.0.0",
+            INSTRUMENT,
+            clock.now(),
+            SignalDirection.LONG,
+            Decimal("1"),
+            10,
+            5,
+            "test invalidation",
+            ("test",),
+            {},
+            "test-model",
+            clock.now() + timedelta(minutes=5),
+            SignalPurpose.ENTRY,
+        )
+
+    first = runtime._handle_signal(signal(), bar, {})
+    second = runtime._handle_signal(signal(), bar, {})
+
+    assert first is not None and first.state is OrderState.OPEN
+    assert second is None
+    assert len(runtime.broker.get_orders()) == 1
     runtime.shutdown()
 
 
