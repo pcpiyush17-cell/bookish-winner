@@ -16,6 +16,7 @@ from personal_quant.broker.mock import MockBroker
 from personal_quant.clocks import SimulatedClock
 from personal_quant.domain.identifiers import ClientOrderId, InstrumentKey
 from personal_quant.domain.money import Money
+from personal_quant.paper import PaperBroker
 
 
 def request(
@@ -157,3 +158,17 @@ def test_paper_portfolio_restore_is_allowed_only_before_order_activity() -> None
     with pytest.raises(BrokerError) as short:
         empty.restore_portfolio(Money.from_value("1"), {instrument: (-1, Money.from_value("625"))})
     assert short.value.code == "short_position_blocked"
+
+
+def test_paper_broker_ids_are_unique_across_runtime_instances() -> None:
+    clock = SimulatedClock(datetime(2026, 7, 30, 4, 0, tzinfo=UTC))
+    first = PaperBroker(clock)
+    second = PaperBroker(clock)
+
+    first_order = first.place_order(request(quantity=1, tag="pqpaper1"))
+    second_order = second.place_order(request(quantity=1, tag="pqpaper2"))
+    first_fill = first.fill(first_order.broker_order_id, 1, Money.from_value("100"))
+    second_fill = second.fill(second_order.broker_order_id, 1, Money.from_value("100"))
+
+    assert first_order.broker_order_id != second_order.broker_order_id
+    assert first_fill.fill_id != second_fill.fill_id
