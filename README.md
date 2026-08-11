@@ -153,6 +153,11 @@ Replay state is isolated under `state/replay`. Only one clean, checksum-verified
 per historical market date. Revised WP-14 acceptance requires 30 replay dates plus five clean live
 dry sessions; replay never substitutes for the live-only checks.
 
+For multiple completed dates, use the fail-closed
+[`WP-14 controlled historical replay batch`](docs/runbooks/WP14_HISTORICAL_BATCH.md). It downloads,
+validates, replays, audits, and backs up each date sequentially, retaining local transcripts and
+stopping at the first anomaly.
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
@@ -356,7 +361,7 @@ excluded by `.gitignore`.
   remains pending.
 - Strategy research has not yet earned evidence beyond engineering validation; no strategy is
   approved for live trading.
-- Revised WP-14 hybrid evidence has reached 1/5 live dry sessions and 0/30 historical replay
+- Revised WP-14 hybrid evidence has reached 1/5 live dry sessions and 1/30 historical replay
   sessions; the two evidence sources remain isolated and independently auditable.
 - Sandbox support does not imply approval for live trading. Production authentication and
   production order routing remain unavailable.
