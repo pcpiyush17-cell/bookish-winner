@@ -385,6 +385,8 @@ class PaperRuntime:
     def _handle_signal(
         self, signal: Signal, bar: MarketBar, positions: dict[InstrumentKey, int]
     ) -> StoredOrder | None:
+        if any(order.instrument == signal.instrument for order in self.oms.open_orders()):
+            return None
         current = positions.get(signal.instrument, 0)
         side = desired_side(signal, current)
         if side is None:
