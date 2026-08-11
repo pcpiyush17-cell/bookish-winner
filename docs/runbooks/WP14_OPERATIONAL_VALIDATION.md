@@ -1,6 +1,6 @@
 # WP-14 operational validation runbook
 
-Status: **READINESS REHEARSAL PASSED; OPERATIONAL EVIDENCE 1/10 DRY, 0/30 FORMAL**.
+Status: **HYBRID EVIDENCE 1/5 LIVE DRY, 0/30 HISTORICAL REPLAY**.
 
 The lifecycle engine, paper broker, evidence schema, immutable reports, and authenticated
 current-data runner are implemented. The non-counting readiness rehearsal passed on 2026-07-30.
@@ -45,7 +45,8 @@ inactive, the runtime lock was released, and production order routing remained u
 The broker reported WebSocket close code 1006 during the operator-triggered closing handshake.
 This did not interrupt operational processing: recording finalization, the immutable report,
 reconciliation, clean runtime shutdown, and lock release all completed. The read-only evidence
-auditor accepted the session and reported `1/10` dry sessions and `0/30` formal sessions.
+legacy live auditor accepted the session. Under the revised hybrid policy it is Live Dry Session
+`1/5`; it does not create historical replay credit.
 
 ## Read-only status
 
@@ -87,18 +88,26 @@ requirements are genuinely met.
   released lock, database integrity, and evidence auditor output. Rehearsals do not count; the
   first operational dry session must be explicitly designated before it starts.
 
-## Evidence sequence
+## Hybrid evidence sequence
 
-1. Run exactly one scheduled dry session on a market date.
+1. Run at most one designated live dry session on a market date.
 2. After shutdown, review feed gaps, signals, risk decisions, orders, fills, positions, cash,
    costs, P&L, reconciliation, snapshots, and the immutable report.
 3. Resolve every anomaly before continuing. Failed or interrupted sessions never count.
-4. Repeat until the auditor reports `10/10` dry sessions.
-5. Change `evidence_kind` to `formal`; the runtime itself rejects formal sessions before the dry
-   gate.
-6. Collect and review 30 scheduled formal sessions, again at most one countable formal session per
-   market date.
-7. Treat any unresolved reconciliation failure or evidence-integrity issue as a stop condition.
+4. Repeat until the hybrid auditor reports `5/5` live dry sessions.
+5. Independently replay 30 distinct, complete, gap-free historical market dates through the
+   historical paper runner. Store them only in `state/replay/trading.sqlite`.
+6. Require immutable source manifests and matching curated-data SHA-256 checksums. A duplicate
+   replay date, data gap, invalid candle, checksum mismatch, failed pre-flight, unclean shutdown,
+   or reconciliation difference makes that replay ineligible.
+7. Run `pq hybrid-evidence-status`; acceptance requires `5/5` live and `30/30` replay with no
+   unresolved live evidence issue.
+8. Treat any reconciliation failure or evidence-integrity issue as a stop condition.
+
+Historical replay validates deterministic strategy, risk, simulated execution, costs, accounting,
+and reporting. It cannot validate live authentication, feed freshness, WebSocket ordering,
+reconnect behavior, network stability, wall-clock scheduling, or unattended PC operation; those
+remain obligations of the five live sessions.
 
 ## Per-session operator record
 

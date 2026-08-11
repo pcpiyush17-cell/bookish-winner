@@ -2544,7 +2544,9 @@ Deliver:
 
 Acceptance:
 
-- ten dry sessions, then 30 formal paper sessions;
+- hybrid evidence: 30 checksum-verified historical paper replay dates plus five clean live dry
+  sessions on distinct market dates;
+- historical replay evidence remains explicitly separate from live operational evidence;
 - no reconciliation failure.
 
 ## WP-15: Local API and dashboard

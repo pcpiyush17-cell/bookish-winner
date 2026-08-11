@@ -104,7 +104,7 @@ def test_rate_limiter_is_bounded_and_releases_old_requests() -> None:
 def test_request_rejects_unknown_interval_naive_and_reverse_ranges() -> None:
     aware = datetime(2026, 7, 28, tzinfo=UTC)
     with pytest.raises(HistoricalDataError, match="enabled"):
-        request(aware, interval="minute")
+        request(aware, interval="second")
     with pytest.raises(HistoricalDataError, match="timezone-aware"):
         request(datetime(2026, 7, 28))
     with pytest.raises(HistoricalDataError, match="must not follow"):

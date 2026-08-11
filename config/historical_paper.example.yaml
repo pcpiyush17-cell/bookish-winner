@@ -1,0 +1,10 @@
+schema_version: 1
+database_path: state/replay/trading.sqlite
+runtime_config: config/historical_paper_runtime.example.yaml
+risk_config: config/risk/conservative_10k.yaml
+strategy_config: config/strategies/baseline_momentum_v1.yaml
+calendar_config: config/calendars/nse_equity_2026.yaml
+# Replace this with the immutable manifest produced by `pq historical-download`.
+historical_manifest: data/manifests/REPLACE_WITH_MANIFEST.json
+market_date: 2026-07-29
+instrument: NSE:INFY

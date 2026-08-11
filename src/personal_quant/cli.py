@@ -29,6 +29,11 @@ from personal_quant.historical import (
     HistoricalRequest,
     KiteHistoricalSource,
 )
+from personal_quant.historical_paper import (
+    HistoricalPaperConfig,
+    HistoricalPaperError,
+    run_historical_paper_session,
+)
 from personal_quant.instruments import (
     InstrumentError,
     InstrumentSnapshotStore,
@@ -38,8 +43,9 @@ from personal_quant.instruments import (
     download_instruments,
 )
 from personal_quant.market_calendar import CalendarError, MarketCalendar
-from personal_quant.paper_evidence import audit_paper_evidence
+from personal_quant.paper_evidence import audit_hybrid_evidence, audit_paper_evidence
 from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
+from personal_quant.paper_runtime import RuntimeError as PaperRuntimeError
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -50,6 +56,59 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("historical-paper-session")
+def historical_paper_session(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Historical paper-session configuration.")
+    ] = Path("config/historical_paper.example.yaml"),
+    confirm: Annotated[
+        str,
+        typer.Option(help="Exact phrase: START HISTORICAL PAPER REPLAY."),
+    ] = "",
+) -> None:
+    """Replay one historical market date through PaperBroker without live connectivity."""
+    if confirm != "START HISTORICAL PAPER REPLAY":
+        typer.echo(
+            "Historical paper error [historical_paper_confirmation_invalid]: "
+            "Exact confirmation required: START HISTORICAL PAPER REPLAY",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    try:
+        result = run_historical_paper_session(HistoricalPaperConfig.load(config_path))
+    except (HistoricalPaperError, PaperRuntimeError, StorageError) as error:
+        code = getattr(error, "code", "historical_paper_failed")
+        typer.echo(f"Historical paper error [{code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Historical paper session: {result.session_id}")
+    typer.echo(f"Market date: {result.market_date.isoformat()}")
+    typer.echo(f"Bars replayed: {result.bars}")
+    typer.echo(f"Source SHA-256: {result.source_checksum}")
+    typer.echo(f"Report: {result.report_path}")
+    typer.echo("This replay is not live-market operational evidence.")
+
+
+@app.command("hybrid-evidence-status")
+def hybrid_evidence_status(
+    operational_path: Annotated[
+        Path, typer.Option("--operational-path", help="Live operational database path.")
+    ] = Path("state/trading.sqlite"),
+    replay_path: Annotated[
+        Path, typer.Option("--replay-path", help="Historical replay database path.")
+    ] = Path("state/replay/trading.sqlite"),
+) -> None:
+    """Audit the revised WP-14 hybrid acceptance without mutating evidence."""
+    try:
+        audit = audit_hybrid_evidence(Database(operational_path), Database(replay_path))
+    except StorageError as error:
+        _storage_failure(error)
+    typer.echo(f"Audited live dry sessions: {audit.live_dry_sessions}/5")
+    typer.echo(f"Audited historical replay sessions: {audit.replay_sessions}/30")
+    typer.echo("WP-14 hybrid acceptance: " + ("MET" if audit.acceptance_met else "PENDING"))
+    for blocker in audit.blockers:
+        typer.echo(f"Blocker: {blocker}")
 
 
 @app.command("paper-evidence-status")
@@ -410,7 +469,7 @@ def historical_download(
     start: Annotated[str, typer.Option("--start", help="Inclusive ISO date.")],
     end: Annotated[str, typer.Option("--end", help="Inclusive ISO date.")],
     snapshot: Annotated[Path, typer.Option("--snapshot", help="Dated instrument directory.")],
-    interval: Annotated[str, typer.Option("--interval", help="day or 15minute.")] = "day",
+    interval: Annotated[str, typer.Option("--interval", help="minute, 15minute, or day.")] = "day",
     root: Annotated[Path, typer.Option("--root", help="Historical data root.")] = Path("data"),
     token_path: Annotated[Path, typer.Option("--token-path", help="Sandbox token file.")] = Path(
         "state/session/sandbox_access_token.json"

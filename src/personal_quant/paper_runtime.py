@@ -246,6 +246,7 @@ class PaperRuntime:
     broker: PaperBroker
     accounting: PortfolioAccounting
     preflight_inputs: PreflightInputs
+    evidence_source: str = "live"
     session_id: UUID = field(default_factory=uuid4)
     state: RuntimeState = RuntimeState.CREATED
     reconciliation_healthy: bool = False
@@ -256,12 +257,16 @@ class PaperRuntime:
     _risk_rejected: int = 0
     _orders_submitted: int = 0
     _last_prices: dict[InstrumentKey, Money] = field(default_factory=dict)
+    _starting_realised_paise: int = 0
+    _starting_costs: Money = field(default_factory=lambda: Money.from_value(0))
 
     def preflight(self) -> PreflightReport:
         if self.state is not RuntimeState.CREATED:
             raise RuntimeError("preflight_state_invalid", "Pre-flight can run only once")
         now = self.clock.now()
         _aware(now)
+        if self.evidence_source not in {"live", "replay"}:
+            raise RuntimeError("evidence_source_invalid", "Runtime evidence source is invalid")
         if self.config.evidence_kind is EvidenceKind.FORMAL:
             progress = runtime_progress(self.database)
             if not progress.dry_requirement_met:
@@ -274,6 +279,7 @@ class PaperRuntime:
         self.state = RuntimeState.PREFLIGHT
         interrupted = self._mark_interrupted(now)
         self._initialize_cash(now)
+        self._starting_realised_paise, self._starting_costs = self._accounting_totals()
         differences = self._reconcile()
         feed = self._feed_decision()
         free_mb = shutil.disk_usage(self.database.path.parent).free // (1024 * 1024)
@@ -522,8 +528,8 @@ class PaperRuntime:
                 """
                 INSERT INTO paper_runtime_sessions(
                     session_id, evidence_kind, state, started_at, git_commit,
-                    release_manifest_hash, strategy_manifest_hash, config_hash
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    release_manifest_hash, strategy_manifest_hash, config_hash, evidence_source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(self.session_id),
@@ -534,6 +540,7 @@ class PaperRuntime:
                     self.preflight_inputs.release_manifest_hash,
                     self.preflight_inputs.strategy_manifest_hash,
                     self.config.fingerprint(),
+                    self.evidence_source,
                 ),
             )
 
@@ -615,17 +622,9 @@ class PaperRuntime:
                 Decimal(0),
             )
         )
-        connection = self.database.connect(read_only=True)
-        try:
-            realised_paise = int(
-                connection.execute(
-                    "SELECT COALESCE(SUM(realised_pnl_paise), 0) FROM positions"
-                ).fetchone()[0]
-            )
-        finally:
-            connection.close()
-        realised = Money(Decimal(realised_paise) / 100)
-        costs = self.accounting.cost_total()
+        realised_paise, total_costs = self._accounting_totals()
+        realised = Money(Decimal(realised_paise - self._starting_realised_paise) / 100)
+        costs = total_costs - self._starting_costs
         cash = self.broker.get_funds().available_cash
         return DailyReport(
             self.session_id,
@@ -649,6 +648,18 @@ class PaperRuntime:
             self.reconciliation_healthy,
             clean,
         )
+
+    def _accounting_totals(self) -> tuple[int, Money]:
+        connection = self.database.connect(read_only=True)
+        try:
+            realised_paise = int(
+                connection.execute(
+                    "SELECT COALESCE(SUM(realised_pnl_paise), 0) FROM positions"
+                ).fetchone()[0]
+            )
+        finally:
+            connection.close()
+        return realised_paise, self.accounting.cost_total()
 
     def _write_report(self, report: DailyReport) -> Path:
         path = (
@@ -693,7 +704,8 @@ def runtime_progress(database: Database) -> RuntimeProgress:
         rows = connection.execute(
             """
             SELECT evidence_kind, count(*) AS count FROM paper_runtime_sessions
-            WHERE state='STOPPED' AND clean_shutdown=1 AND reconciliation_healthy=1
+            WHERE evidence_source='live' AND state='STOPPED'
+                AND clean_shutdown=1 AND reconciliation_healthy=1
             GROUP BY evidence_kind
             """
         ).fetchall()
