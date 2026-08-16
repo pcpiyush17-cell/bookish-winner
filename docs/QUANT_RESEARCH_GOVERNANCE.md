@@ -36,7 +36,9 @@ schema shape.
 
 ## Research sequence
 
-1. QR-01 builds a point-in-time, survivorship-safe NSE universe and data-quality layer.
+1. QR-01 builds a point-in-time, survivorship-safe NSE universe and data-quality layer. Its
+   exact-observation limits are documented in
+   [`POINT_IN_TIME_UNIVERSE.md`](POINT_IN_TIME_UNIVERSE.md).
 2. QR-02 adds immutable experiment/result storage and leakage-safe evaluation utilities.
 3. QR-03 establishes simple benchmark strategies before complex models are attempted.
 4. Challenger strategies progress from statistical baselines to machine learning and only then

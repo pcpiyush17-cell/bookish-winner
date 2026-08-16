@@ -169,7 +169,12 @@ machine-validated. See the
 ```powershell
 uv run pq research-governance-check
 uv run pq research-manifest-check --manifest config/research/experiment.example.yaml
+uv run pq research-universe-build
 ```
+
+QR-01 derives immutable exact-date NSE membership from the locally retained instrument snapshots;
+it never backfills missing dates. See the
+[`point-in-time universe contract`](docs/POINT_IN_TIME_UNIVERSE.md).
 
 ## Analytics and features
 

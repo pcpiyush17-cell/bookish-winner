@@ -1,0 +1,11 @@
+schema_version: 1
+policy_id: nse_equity_point_in_time_v1
+exchange: NSE
+segment: NSE
+instrument_type: EQ
+membership_semantics: exact_snapshot
+minimum_snapshots: 2
+minimum_members_per_snapshot: 1
+maximum_missing_isin_ratio: 0.01
+reject_duplicate_isin: true
+reject_key_isin_change: true
