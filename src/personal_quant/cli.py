@@ -46,6 +46,11 @@ from personal_quant.market_calendar import CalendarError, MarketCalendar
 from personal_quant.paper_evidence import audit_hybrid_evidence, audit_paper_evidence
 from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
 from personal_quant.paper_runtime import RuntimeError as PaperRuntimeError
+from personal_quant.research_governance import (
+    ExperimentManifest,
+    ResearchGovernance,
+    ResearchGovernanceError,
+)
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -56,6 +61,44 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-governance-check")
+def research_governance_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned research governance configuration.")
+    ] = Path("config/research/governance_v1.yaml"),
+) -> None:
+    """Validate research isolation without creating state or experiments."""
+    try:
+        governance = ResearchGovernance.load(config_path)
+        governance.validate_boundaries(Path.cwd())
+    except ResearchGovernanceError as error:
+        typer.echo(f"Research governance error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research governance valid: {governance.governance_id}")
+    typer.echo(f"Workspace root: {governance.workspace_root}")
+    typer.echo(f"State root: {governance.state_root}")
+    typer.echo("WP-14 mutation: disabled")
+    typer.echo("Production order routing: disabled")
+
+
+@app.command("research-manifest-check")
+def research_manifest_check(
+    manifest_path: Annotated[
+        Path, typer.Option("--manifest", help="Research experiment YAML manifest.")
+    ],
+) -> None:
+    """Validate an experiment intent without running research or writing artifacts."""
+    try:
+        manifest = ExperimentManifest.load(manifest_path)
+    except ResearchGovernanceError as error:
+        typer.echo(f"Research manifest error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research manifest valid: {manifest.experiment_id}")
+    typer.echo(f"Strategy family: {manifest.strategy_family}")
+    typer.echo(f"Status: {manifest.status}")
+    typer.echo("Eligible for operational promotion: NO")
 
 
 @app.command("historical-paper-session")

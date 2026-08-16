@@ -158,6 +158,19 @@ For multiple completed dates, use the fail-closed
 validates, replays, audits, and backs up each date sequentially, retaining local transcripts and
 stopping at the first anomaly.
 
+## Quantitative research lab
+
+QR-00 defines a research-only governance layer that runs in parallel with WP-14 without changing
+its strategy, wallet, evidence, or reports. Research paths, point-in-time data requirements,
+disjoint evaluation windows, mandatory cost stresses, and disabled production routing are
+machine-validated. See the
+[`quantitative research governance contract`](docs/QUANT_RESEARCH_GOVERNANCE.md).
+
+```powershell
+uv run pq research-governance-check
+uv run pq research-manifest-check --manifest config/research/experiment.example.yaml
+```
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

@@ -1,0 +1,32 @@
+schema_version: 1
+experiment_id: QR-0001-benchmark-example
+created_at: 2026-08-16T12:00:00+05:30
+hypothesis: A cost-aware benchmark can establish a reproducible research control.
+strategy_family: benchmark
+universe_manifest:
+  manifest_path: research/data/universes/example.json
+  sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  as_of: 2020-01-01T00:00:00+05:30
+datasets:
+  - manifest_path: research/data/manifests/example.json
+    sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    as_of: 2020-01-01T00:00:00+05:30
+code_commit: cccccccccccccccccccccccccccccccccccccccc
+uv_lock_sha256: dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+config_sha256: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+train:
+  start: 2015-01-01T00:00:00+05:30
+  end: 2018-01-01T00:00:00+05:30
+validation:
+  start: 2018-01-01T00:00:00+05:30
+  end: 2019-01-01T00:00:00+05:30
+holdout:
+  start: 2019-01-01T00:00:00+05:30
+  end: 2020-01-01T00:00:00+05:30
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+status: DRAFT
+wp14_isolated: true
+production_order_routing: false

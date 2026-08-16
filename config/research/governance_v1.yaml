@@ -1,0 +1,20 @@
+schema_version: 1
+governance_id: qr_governance_v1
+workspace_root: research
+state_root: state/research
+prohibited_paths:
+  - state/trading.sqlite
+  - state/replay
+  - state/session
+  - backups/wp14
+  - data/recordings
+  - data/manifests
+required_cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+require_clean_git: true
+require_point_in_time_data: true
+require_untouched_holdout: true
+production_order_routing: false
+wp14_evidence_mutation: false
