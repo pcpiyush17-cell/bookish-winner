@@ -51,6 +51,13 @@ from personal_quant.research_governance import (
     ResearchGovernance,
     ResearchGovernanceError,
 )
+from personal_quant.research_universe import (
+    PointInTimeUniverseStore,
+    ResearchUniverseError,
+    UniverseQualityPolicy,
+    discover_snapshot_directories,
+    validate_cli_paths,
+)
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -61,6 +68,61 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-universe-build")
+def research_universe_build(
+    snapshots_root: Annotated[
+        Path, typer.Option("--snapshots-root", help="Immutable instrument snapshot root.")
+    ] = Path("data/reference/instruments"),
+    output_root: Annotated[
+        Path, typer.Option("--output-root", help="Research-only universe artifact root.")
+    ] = Path("research/data/universes"),
+    policy_path: Annotated[
+        Path, typer.Option("--policy", help="Versioned universe quality policy.")
+    ] = Path("config/research/universe_quality_v1.yaml"),
+) -> None:
+    """Build an immutable exact-date NSE research universe without routing orders."""
+    try:
+        validate_cli_paths(
+            project_root=Path.cwd(), snapshots_root=snapshots_root, output_root=output_root
+        )
+        universe = PointInTimeUniverseStore(output_root).build(
+            snapshot_directories=discover_snapshot_directories(snapshots_root),
+            policy=UniverseQualityPolicy.load(policy_path),
+            created_at=SystemClock().now(),
+            project_root=Path.cwd(),
+        )
+    except (ResearchUniverseError, InstrumentError) as error:
+        code = getattr(error, "code", "research_universe_failed")
+        typer.echo(f"Research universe error [{code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research universe ready: {universe.manifest.universe_id}")
+    typer.echo(f"Observations: {universe.manifest.observation_count}")
+    typer.echo(f"Data SHA-256: {universe.manifest.data_sha256}")
+    typer.echo("Exact-date membership: enforced")
+    typer.echo("WP-14 mutation: disabled")
+    typer.echo("Production order routing: disabled")
+
+
+@app.command("research-universe-check")
+def research_universe_check(
+    manifest_path: Annotated[
+        Path, typer.Option("--manifest", help="Generated universe manifest JSON.")
+    ],
+) -> None:
+    """Verify a research universe checksum and exact-date contract without mutation."""
+    try:
+        universe = PointInTimeUniverseStore(manifest_path.parent.parent).load(
+            manifest_path, project_root=Path.cwd()
+        )
+    except ResearchUniverseError as error:
+        typer.echo(f"Research universe error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"[PASS] Research universe: {universe.manifest.universe_id}")
+    typer.echo(f"Observations: {universe.manifest.observation_count}")
+    typer.echo("Exact-date membership: enforced")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-governance-check")
