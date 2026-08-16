@@ -23,6 +23,9 @@ data/curated/
 data/reference/
 data/recordings/
 data/manifests/
+research/data/
+research/results/
+research/cache/
 *.sqlite
 *.sqlite3
 *.duckdb

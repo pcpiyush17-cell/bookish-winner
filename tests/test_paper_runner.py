@@ -11,6 +11,7 @@ from typer.testing import CliRunner
 import personal_quant.paper_runner as paper_runner
 from personal_quant.broker.auth import TokenStore
 from personal_quant.cli import app
+from personal_quant.clocks import SimulatedClock
 from personal_quant.domain.identifiers import InstrumentKey, InstrumentToken
 from personal_quant.domain.money import Money
 from personal_quant.instruments import InstrumentSnapshotStore
@@ -206,6 +207,8 @@ class ProfileClientStub:
 
 
 class OperationalTickerStub(TickerStub):
+    moment = datetime.now(UTC)
+
     def __init__(self, *_args: object, **_kwargs: object) -> None:
         self.closed = False
 
@@ -216,8 +219,8 @@ class OperationalTickerStub(TickerStub):
             [
                 {
                     "instrument_token": 408065,
-                    "exchange_timestamp": datetime.now(UTC),
-                    "timestamp": datetime.now(UTC),
+                    "exchange_timestamp": self.moment,
+                    "timestamp": self.moment,
                     "last_price": 1500,
                     "last_quantity": 1,
                     "volume": 100,
@@ -253,10 +256,11 @@ def instrument_row() -> dict[str, object]:
 def test_operational_assembly_runs_one_clean_temp_session_with_paper_broker_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    now = datetime.now(UTC)
+    now = datetime(2026, 8, 14, 4, 0, tzinfo=UTC)
+    local_date = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
     snapshot = InstrumentSnapshotStore(tmp_path / "instruments").save(
         rows=[instrument_row()],
-        snapshot_date=now.astimezone(ZoneInfo("Asia/Kolkata")).date(),
+        snapshot_date=local_date,
         downloaded_at=now,
     )
     snapshot_directory = (
@@ -294,13 +298,15 @@ def test_operational_assembly_runs_one_clean_temp_session_with_paper_broker_only
     )
     monkeypatch.setenv("KITE_API_KEY", "fixture-key")
     monkeypatch.setenv("KITE_EXPECTED_USER_ID", "AB1234")
+    monkeypatch.setattr(paper_runner, "SystemClock", lambda: SimulatedClock(now))
     monkeypatch.setattr(paper_runner, "create_production_client", lambda _key: ProfileClientStub())
+    OperationalTickerStub.moment = now
     monkeypatch.setattr("kiteconnect.KiteTicker", OperationalTickerStub)
 
     runner = build_operational_runner(config)
 
     def finish(_seconds: float) -> None:
-        runner.on_tick(live_tick(datetime.now(UTC) + timedelta(minutes=2), "1501", 120))
+        runner.on_tick(live_tick(now + timedelta(minutes=2), "1501", 120))
         runner.request_stop()
 
     runner.sleeper = finish
