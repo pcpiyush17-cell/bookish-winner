@@ -58,4 +58,7 @@ QR-06 adds the strategy-agnostic, unlevered
 QR-07 adds the long-only
 [`correlation-aware strategy allocator`](CORRELATION_AWARE_ALLOCATION.md).
 
+QR-08 establishes the
+[`purged walk-forward ML dataset foundation`](PURGED_WALK_FORWARD_ML.md).
+
 No QR work changes the ongoing WP-14 evidence run.

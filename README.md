@@ -200,6 +200,10 @@ QR-07 adds point-in-time, correlation-aware allocation across validated strategy
 its contract with `uv run pq research-portfolio-allocation-check`; see
 [`CORRELATION_AWARE_ALLOCATION.md`](docs/CORRELATION_AWARE_ALLOCATION.md).
 
+QR-08 adds deterministic supervised-learning samples and purged, embargoed walk-forward folds.
+Validate its contract with `uv run pq research-ml-dataset-check`; see
+[`PURGED_WALK_FORWARD_ML.md`](docs/PURGED_WALK_FORWARD_ML.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
