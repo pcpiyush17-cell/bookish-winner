@@ -52,4 +52,7 @@ QR-04 begins that progression with the interpretable, cost-aware
 QR-05 adds the complementary
 [`regime-aware mean-reversion challenger`](REGIME_MEAN_REVERSION.md).
 
+QR-06 adds the strategy-agnostic, unlevered
+[`volatility-targeting risk overlay`](VOLATILITY_TARGETING.md).
+
 No QR work changes the ongoing WP-14 evidence run.

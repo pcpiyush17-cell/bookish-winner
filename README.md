@@ -192,6 +192,10 @@ QR-05 adds a liquidity-filtered, regime-aware cross-sectional mean-reversion cha
 its contract with `uv run pq research-mean-reversion-check`; see
 [`REGIME_MEAN_REVERSION.md`](docs/REGIME_MEAN_REVERSION.md).
 
+QR-06 adds an unlevered, lagged volatility-targeting risk overlay. Validate its contract with
+`uv run pq research-volatility-targeting-check`; see
+[`VOLATILITY_TARGETING.md`](docs/VOLATILITY_TARGETING.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

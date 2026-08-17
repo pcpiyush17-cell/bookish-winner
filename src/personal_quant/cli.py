@@ -68,6 +68,10 @@ from personal_quant.research_universe import (
     discover_snapshot_directories,
     validate_cli_paths,
 )
+from personal_quant.research_volatility_targeting import (
+    ResearchVolatilityTargetingError,
+    VolatilityTargetConfig,
+)
 from personal_quant.risk import KillSwitch, RiskError
 from personal_quant.storage.database import Database, StorageError
 from personal_quant.storage.maintenance import timestamped_backup_path
@@ -78,6 +82,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-volatility-targeting-check")
+def research_volatility_targeting_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned volatility-targeting configuration.")
+    ] = Path("config/research/volatility_targeting_v1.yaml"),
+) -> None:
+    """Validate QR-06 without executing research or changing state."""
+    try:
+        config = VolatilityTargetConfig.load(config_path)
+    except ResearchVolatilityTargetingError as error:
+        typer.echo(f"Research volatility error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research volatility targeting valid: {config.overlay_id}")
+    typer.echo(f"Maximum exposure: {config.maximum_exposure}x (unlevered)")
+    typer.echo("Signal execution lag: 1 observation")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-mean-reversion-check")
