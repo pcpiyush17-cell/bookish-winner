@@ -1,0 +1,22 @@
+schema_version: 1
+model_id: qr_ridge_baseline_v1
+required_dataset_id: qr_ml_dataset_v1
+feature_names:
+  - momentum_20d
+  - reversal_5d
+  - volatility_20d
+  - dollar_volume_rank
+ridge_penalty: "1.0"
+feature_std_floor: "0.000001"
+maximum_absolute_prediction: "0.20"
+minimum_train_samples: 500
+selection_fraction: "0.20"
+require_positive_prediction: true
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+selection_window: validation
+fixed_hyperparameters: true
+production_order_routing: false

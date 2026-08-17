@@ -61,4 +61,7 @@ QR-07 adds the long-only
 QR-08 establishes the
 [`purged walk-forward ML dataset foundation`](PURGED_WALK_FORWARD_ML.md).
 
+QR-09 adds the fixed, interpretable
+[`ridge-regression ML baseline`](RIDGE_ML_BASELINE.md).
+
 No QR work changes the ongoing WP-14 evidence run.
