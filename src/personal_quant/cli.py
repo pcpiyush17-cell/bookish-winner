@@ -56,6 +56,10 @@ from personal_quant.research_governance import (
     ResearchGovernance,
     ResearchGovernanceError,
 )
+from personal_quant.research_mean_reversion import (
+    MeanReversionConfig,
+    ResearchMeanReversionError,
+)
 from personal_quant.research_momentum import MomentumConfig, ResearchMomentumError
 from personal_quant.research_universe import (
     PointInTimeUniverseStore,
@@ -74,6 +78,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-mean-reversion-check")
+def research_mean_reversion_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned regime mean-reversion configuration.")
+    ] = Path("config/research/mean_reversion_regime_v1.yaml"),
+) -> None:
+    """Validate QR-05 without executing research or changing state."""
+    try:
+        config = MeanReversionConfig.load(config_path)
+    except ResearchMeanReversionError as error:
+        typer.echo(f"Research mean-reversion error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research mean reversion valid: {config.strategy_id}")
+    typer.echo("Regime filter: trend and high-volatility risk blocked")
+    typer.echo("Signal execution lag: 1 observation")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-momentum-check")

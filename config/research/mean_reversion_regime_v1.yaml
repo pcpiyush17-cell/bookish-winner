@@ -1,0 +1,23 @@
+schema_version: 1
+strategy_id: qr_mean_reversion_regime_v1
+signal_lookback_observations: 5
+regime_lookback_observations: 60
+minimum_universe: 20
+entry_zscore: "-1.0"
+exit_zscore: "-0.25"
+bottom_fraction: "0.20"
+maximum_positions: 20
+maximum_weight: "0.10"
+minimum_dollar_volume: "10000000"
+trend_threshold: "0.08"
+volatility_threshold: "0.025"
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+signal_execution_lag_observations: 1
+selection_window: validation
+long_only: true
+fractional_units: true
+production_order_routing: false
