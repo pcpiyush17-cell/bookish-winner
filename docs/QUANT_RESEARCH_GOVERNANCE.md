@@ -55,4 +55,7 @@ QR-05 adds the complementary
 QR-06 adds the strategy-agnostic, unlevered
 [`volatility-targeting risk overlay`](VOLATILITY_TARGETING.md).
 
+QR-07 adds the long-only
+[`correlation-aware strategy allocator`](CORRELATION_AWARE_ALLOCATION.md).
+
 No QR work changes the ongoing WP-14 evidence run.

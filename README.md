@@ -196,6 +196,10 @@ QR-06 adds an unlevered, lagged volatility-targeting risk overlay. Validate its 
 `uv run pq research-volatility-targeting-check`; see
 [`VOLATILITY_TARGETING.md`](docs/VOLATILITY_TARGETING.md).
 
+QR-07 adds point-in-time, correlation-aware allocation across validated strategy streams. Validate
+its contract with `uv run pq research-portfolio-allocation-check`; see
+[`CORRELATION_AWARE_ALLOCATION.md`](docs/CORRELATION_AWARE_ALLOCATION.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
