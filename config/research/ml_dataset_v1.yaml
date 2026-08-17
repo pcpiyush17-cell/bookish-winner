@@ -1,0 +1,17 @@
+schema_version: 1
+dataset_id: qr_ml_dataset_v1
+feature_names:
+  - momentum_20d
+  - reversal_5d
+  - volatility_20d
+  - dollar_volume_rank
+label_horizon_observations: 5
+minimum_train_observations: 252
+validation_observations: 63
+purge_observations: 6
+embargo_observations: 5
+minimum_folds: 3
+signal_execution_lag_observations: 1
+split_method: expanding_purged_walk_forward
+selection_window: validation
+production_order_routing: false

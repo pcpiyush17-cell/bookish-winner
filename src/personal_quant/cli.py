@@ -60,6 +60,7 @@ from personal_quant.research_mean_reversion import (
     MeanReversionConfig,
     ResearchMeanReversionError,
 )
+from personal_quant.research_ml_dataset import MLDatasetConfig, ResearchMLDatasetError
 from personal_quant.research_momentum import MomentumConfig, ResearchMomentumError
 from personal_quant.research_portfolio_allocation import (
     PortfolioAllocationConfig,
@@ -86,6 +87,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-ml-dataset-check")
+def research_ml_dataset_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned leakage-safe ML dataset configuration.")
+    ] = Path("config/research/ml_dataset_v1.yaml"),
+) -> None:
+    """Validate QR-08 without building a dataset or changing state."""
+    try:
+        config = MLDatasetConfig.load(config_path)
+    except ResearchMLDatasetError as error:
+        typer.echo(f"Research ML dataset error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research ML dataset valid: {config.dataset_id}")
+    typer.echo(f"Split method: {config.split_method}")
+    typer.echo(f"Purge: {config.purge_observations}; embargo: {config.embargo_observations}")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-portfolio-allocation-check")
