@@ -1,0 +1,16 @@
+schema_version: 1
+suite_id: qr_benchmarks_v1
+benchmarks:
+  - cash
+  - equal_weight_buy_hold
+  - equal_weight_monthly
+  - equal_weight_daily
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+minimum_observations: 20
+fractional_units: true
+selection_window: validation
+production_order_routing: false
