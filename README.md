@@ -188,6 +188,10 @@ QR-04 adds a lagged, point-in-time cross-sectional momentum challenger with inve
 sizing and turnover buffers. Validate its contract with `uv run pq research-momentum-check`; see
 [`CROSS_SECTIONAL_MOMENTUM.md`](docs/CROSS_SECTIONAL_MOMENTUM.md).
 
+QR-05 adds a liquidity-filtered, regime-aware cross-sectional mean-reversion challenger. Validate
+its contract with `uv run pq research-mean-reversion-check`; see
+[`REGIME_MEAN_REVERSION.md`](docs/REGIME_MEAN_REVERSION.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
