@@ -1,0 +1,19 @@
+schema_version: 1
+allocator_id: qr_correlation_aware_allocation_v1
+lookback_observations: 60
+minimum_strategies: 2
+volatility_floor: "0.001"
+correlation_penalty: "1.0"
+maximum_strategy_weight: "0.60"
+rebalance_threshold: "0.05"
+maximum_one_way_turnover: "0.25"
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+signal_execution_lag_observations: 1
+selection_window: validation
+long_only: true
+cash_allowed: true
+production_order_routing: false
