@@ -11,6 +11,7 @@ datasets:
   - manifest_path: research/data/manifests/example.json
     sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
     as_of: 2020-01-01T00:00:00+05:30
+config_path: config/strategies/baseline_momentum_v1.yaml
 code_commit: cccccccccccccccccccccccccccccccccccccccc
 uv_lock_sha256: dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 config_sha256: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee

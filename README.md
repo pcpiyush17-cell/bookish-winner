@@ -176,6 +176,10 @@ QR-01 derives immutable exact-date NSE membership from the locally retained inst
 it never backfills missing dates. See the
 [`point-in-time universe contract`](docs/POINT_IN_TIME_UNIVERSE.md).
 
+QR-02 adds checksummed experiment/result storage, purged and embargoed walk-forward folds,
+validation-only selection, and a one-use final holdout. See the
+[`research experiment contract`](docs/RESEARCH_EXPERIMENTS.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

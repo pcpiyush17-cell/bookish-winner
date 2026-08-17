@@ -182,6 +182,7 @@ class ExperimentManifest(BaseModel):
     ]
     universe_manifest: DataSnapshot
     datasets: tuple[DataSnapshot, ...] = Field(min_length=1)
+    config_path: Path
     code_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     uv_lock_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     config_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -197,6 +198,11 @@ class ExperimentManifest(BaseModel):
     @classmethod
     def freeze_sequences(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("config_path", mode="before")
+    @classmethod
+    def parse_config_path(cls, value: object) -> object:
+        return Path(str(value)) if isinstance(value, str) else value
 
     @field_validator("cost_multipliers", mode="before")
     @classmethod
@@ -214,6 +220,8 @@ class ExperimentManifest(BaseModel):
             raise ValueError("train, validation, and holdout windows must be ordered and disjoint")
         if self.cost_multipliers != (Decimal("1.0"), Decimal("1.5"), Decimal("2.0")):
             raise ValueError("experiments must report all required cost multipliers")
+        if self.config_path.is_absolute() or ".." in self.config_path.parts:
+            raise ValueError("research configuration path must be project-relative")
         return self
 
     @classmethod

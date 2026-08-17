@@ -46,6 +46,10 @@ from personal_quant.market_calendar import CalendarError, MarketCalendar
 from personal_quant.paper_evidence import audit_hybrid_evidence, audit_paper_evidence
 from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
 from personal_quant.paper_runtime import RuntimeError as PaperRuntimeError
+from personal_quant.research_experiments import (
+    ExperimentRegistry,
+    ResearchExperimentError,
+)
 from personal_quant.research_governance import (
     ExperimentManifest,
     ResearchGovernance,
@@ -68,6 +72,32 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-result-check")
+def research_result_check(
+    manifest_path: Annotated[
+        Path, typer.Option("--manifest", help="Immutable research result manifest JSON.")
+    ],
+    registry_root: Annotated[
+        Path, typer.Option("--registry-root", help="Research experiment registry root.")
+    ] = Path("research/results/experiments"),
+    holdout_state_root: Annotated[
+        Path, typer.Option("--holdout-state-root", help="Research-only holdout claim root.")
+    ] = Path("state/research/holdout"),
+) -> None:
+    """Verify a research result without promoting it or changing state."""
+    try:
+        result = ExperimentRegistry(registry_root, holdout_state_root).verify_result(
+            manifest_path, project_root=Path.cwd()
+        )
+    except ResearchExperimentError as error:
+        typer.echo(f"Research result error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"[PASS] Research result: {result.experiment_id}")
+    typer.echo(f"Decision: {result.decision}")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-universe-build")
