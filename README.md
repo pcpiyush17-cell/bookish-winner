@@ -180,6 +180,10 @@ QR-02 adds checksummed experiment/result storage, purged and embargoed walk-forw
 validation-only selection, and a one-use final holdout. See the
 [`research experiment contract`](docs/RESEARCH_EXPERIMENTS.md).
 
+QR-03 establishes cost-aware cash and equal-weight controls before any complex challenger is
+considered. Validate them with `uv run pq research-benchmarks-check`; see the
+[`research benchmark contract`](docs/RESEARCH_BENCHMARKS.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

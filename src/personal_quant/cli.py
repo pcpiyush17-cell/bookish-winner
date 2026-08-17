@@ -46,6 +46,7 @@ from personal_quant.market_calendar import CalendarError, MarketCalendar
 from personal_quant.paper_evidence import audit_hybrid_evidence, audit_paper_evidence
 from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
 from personal_quant.paper_runtime import RuntimeError as PaperRuntimeError
+from personal_quant.research_benchmarks import BenchmarkSuiteConfig, ResearchBenchmarkError
 from personal_quant.research_experiments import (
     ExperimentRegistry,
     ResearchExperimentError,
@@ -72,6 +73,25 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-benchmarks-check")
+def research_benchmarks_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned research benchmark suite configuration.")
+    ] = Path("config/research/benchmarks_v1.yaml"),
+) -> None:
+    """Validate benchmark controls without executing research or changing state."""
+    try:
+        config = BenchmarkSuiteConfig.load(config_path)
+    except ResearchBenchmarkError as error:
+        typer.echo(f"Research benchmark error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research benchmark suite valid: {config.suite_id}")
+    typer.echo(f"Controls: {len(config.benchmarks)}")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-result-check")

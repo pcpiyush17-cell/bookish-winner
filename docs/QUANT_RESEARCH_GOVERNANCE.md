@@ -41,7 +41,8 @@ schema shape.
    [`POINT_IN_TIME_UNIVERSE.md`](POINT_IN_TIME_UNIVERSE.md).
 2. QR-02 adds immutable experiment/result storage and leakage-safe evaluation utilities, described
    in [`RESEARCH_EXPERIMENTS.md`](RESEARCH_EXPERIMENTS.md).
-3. QR-03 establishes simple benchmark strategies before complex models are attempted.
+3. QR-03 establishes the simple controls in
+   [`RESEARCH_BENCHMARKS.md`](RESEARCH_BENCHMARKS.md) before complex models are attempted.
 4. Challenger strategies progress from statistical baselines to machine learning and only then
    deep learning when data volume and benchmark evidence justify it.
 
