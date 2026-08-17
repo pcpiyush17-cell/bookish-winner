@@ -56,6 +56,7 @@ from personal_quant.research_governance import (
     ResearchGovernance,
     ResearchGovernanceError,
 )
+from personal_quant.research_momentum import MomentumConfig, ResearchMomentumError
 from personal_quant.research_universe import (
     PointInTimeUniverseStore,
     ResearchUniverseError,
@@ -73,6 +74,25 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-momentum-check")
+def research_momentum_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned cross-sectional momentum configuration.")
+    ] = Path("config/research/cross_sectional_momentum_v1.yaml"),
+) -> None:
+    """Validate the QR-04 challenger contract without executing research."""
+    try:
+        config = MomentumConfig.load(config_path)
+    except ResearchMomentumError as error:
+        typer.echo(f"Research momentum error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research momentum valid: {config.strategy_id}")
+    typer.echo("Signal execution lag: 1 observation")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-benchmarks-check")

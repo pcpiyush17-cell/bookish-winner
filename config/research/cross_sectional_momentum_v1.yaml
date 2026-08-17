@@ -1,0 +1,21 @@
+schema_version: 1
+strategy_id: qr_cross_sectional_momentum_v1
+lookback_observations: 252
+skip_recent_observations: 21
+minimum_universe: 20
+top_fraction: "0.20"
+maximum_positions: 20
+rank_buffer: 5
+maximum_weight: "0.10"
+volatility_floor: "0.005"
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+rebalance: month_end
+signal_execution_lag_observations: 1
+selection_window: validation
+long_only: true
+fractional_units: true
+production_order_routing: false

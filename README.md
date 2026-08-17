@@ -184,6 +184,10 @@ QR-03 establishes cost-aware cash and equal-weight controls before any complex c
 considered. Validate them with `uv run pq research-benchmarks-check`; see the
 [`research benchmark contract`](docs/RESEARCH_BENCHMARKS.md).
 
+QR-04 adds a lagged, point-in-time cross-sectional momentum challenger with inverse-volatility
+sizing and turnover buffers. Validate its contract with `uv run pq research-momentum-check`; see
+[`CROSS_SECTIONAL_MOMENTUM.md`](docs/CROSS_SECTIONAL_MOMENTUM.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
