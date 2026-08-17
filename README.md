@@ -204,6 +204,10 @@ QR-08 adds deterministic supervised-learning samples and purged, embargoed walk-
 Validate its contract with `uv run pq research-ml-dataset-check`; see
 [`PURGED_WALK_FORWARD_ML.md`](docs/PURGED_WALK_FORWARD_ML.md).
 
+QR-09 adds a fixed-hyperparameter ridge-regression baseline evaluated through QR-08 folds. Validate
+its contract with `uv run pq research-ridge-model-check`; see
+[`RIDGE_ML_BASELINE.md`](docs/RIDGE_ML_BASELINE.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

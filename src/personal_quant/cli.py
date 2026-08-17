@@ -66,6 +66,7 @@ from personal_quant.research_portfolio_allocation import (
     PortfolioAllocationConfig,
     ResearchPortfolioAllocationError,
 )
+from personal_quant.research_ridge_model import ResearchRidgeModelError, RidgeModelConfig
 from personal_quant.research_universe import (
     PointInTimeUniverseStore,
     ResearchUniverseError,
@@ -87,6 +88,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-ridge-model-check")
+def research_ridge_model_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned ridge-baseline configuration.")
+    ] = Path("config/research/ridge_baseline_v1.yaml"),
+) -> None:
+    """Validate QR-09 without fitting a model or changing state."""
+    try:
+        config = RidgeModelConfig.load(config_path)
+    except ResearchRidgeModelError as error:
+        typer.echo(f"Research ridge error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research ridge baseline valid: {config.model_id}")
+    typer.echo(f"Required dataset: {config.required_dataset_id}")
+    typer.echo("Hyperparameters: fixed")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-ml-dataset-check")
