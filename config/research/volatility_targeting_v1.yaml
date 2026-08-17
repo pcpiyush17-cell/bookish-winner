@@ -1,0 +1,19 @@
+schema_version: 1
+overlay_id: qr_volatility_targeting_v1
+lookback_observations: 20
+annualization_observations: 252
+target_annual_volatility: "0.10"
+volatility_floor: "0.01"
+minimum_exposure: "0.00"
+maximum_exposure: "1.00"
+maximum_exposure_step: "0.20"
+rebalance_threshold: "0.05"
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+signal_execution_lag_observations: 1
+selection_window: validation
+cash_return: "0"
+production_order_routing: false
