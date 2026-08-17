@@ -46,4 +46,7 @@ schema shape.
 4. Challenger strategies progress from statistical baselines to machine learning and only then
    deep learning when data volume and benchmark evidence justify it.
 
+QR-04 begins that progression with the interpretable, cost-aware
+[`cross-sectional momentum challenger`](CROSS_SECTIONAL_MOMENTUM.md).
+
 No QR work changes the ongoing WP-14 evidence run.
