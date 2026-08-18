@@ -70,4 +70,7 @@ QR-10 tests bounded nonlinearity with the
 QR-11 holds that complexity accountable through the
 [`model-selection stability gate`](MODEL_STABILITY_GATE.md).
 
+QR-12 binds the fixed models and gate into one reproducible
+[`validation-only evaluation workflow`](MODEL_EVALUATION_WORKFLOW.md).
+
 No QR work changes the ongoing WP-14 evidence run.

@@ -1,0 +1,10 @@
+schema_version: 1
+workflow_id: qr_model_evaluation_v1
+required_dataset_id: qr_ml_dataset_v1
+required_ridge_model_id: qr_ridge_baseline_v1
+required_boosted_model_id: qr_boosted_stumps_v1
+required_stability_gate_id: qr_model_stability_gate_v1
+selection_window: validation
+final_holdout_access: false
+eligible_for_operational_promotion: false
+production_order_routing: false
