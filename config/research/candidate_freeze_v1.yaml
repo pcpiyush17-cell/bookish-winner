@@ -1,0 +1,16 @@
+schema_version: 1
+freeze_id: qr_candidate_freeze_v1
+required_workflow_id: qr_model_evaluation_v1
+required_stability_gate_id: qr_model_stability_gate_v1
+required_stability_decision: BOOSTED_VALIDATION_CANDIDATE
+required_config_artifacts:
+  - ml_dataset
+  - ridge
+  - boosted
+  - stability
+  - evaluation
+selection_window: validation
+final_holdout_access: false
+final_holdout_consumed: false
+eligible_for_operational_promotion: false
+production_order_routing: false
