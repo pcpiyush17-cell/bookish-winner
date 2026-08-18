@@ -216,6 +216,10 @@ QR-11 adds a fingerprinted, fold-aware stability gate between QR-09 and QR-10. V
 contract with `uv run pq research-model-stability-check`; see
 [`MODEL_STABILITY_GATE.md`](docs/MODEL_STABILITY_GATE.md).
 
+QR-12 runs the fixed model pair and stability gate as one validation-only, fingerprinted workflow.
+Validate its contract with `uv run pq research-model-evaluation-check`; see
+[`MODEL_EVALUATION_WORKFLOW.md`](docs/MODEL_EVALUATION_WORKFLOW.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

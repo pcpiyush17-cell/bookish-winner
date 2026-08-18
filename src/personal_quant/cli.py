@@ -65,6 +65,11 @@ from personal_quant.research_mean_reversion import (
     ResearchMeanReversionError,
 )
 from personal_quant.research_ml_dataset import MLDatasetConfig, ResearchMLDatasetError
+from personal_quant.research_model_evaluation import (
+    ModelEvaluationConfig,
+    ModelEvaluationWorkflow,
+    ResearchModelEvaluationError,
+)
 from personal_quant.research_model_stability import (
     ModelStabilityConfig,
     ResearchModelStabilityError,
@@ -96,6 +101,47 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-model-evaluation-check")
+def research_model_evaluation_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned model-evaluation configuration.")
+    ] = Path("config/research/model_evaluation_v1.yaml"),
+    ridge_config_path: Annotated[
+        Path, typer.Option("--ridge-config", help="Fixed QR-09 configuration.")
+    ] = Path("config/research/ridge_baseline_v1.yaml"),
+    boosted_config_path: Annotated[
+        Path, typer.Option("--boosted-config", help="Fixed QR-10 configuration.")
+    ] = Path("config/research/boosted_stumps_v1.yaml"),
+    stability_config_path: Annotated[
+        Path, typer.Option("--stability-config", help="Fixed QR-11 configuration.")
+    ] = Path("config/research/model_stability_gate_v1.yaml"),
+) -> None:
+    """Validate QR-12 orchestration without fitting or reading data."""
+    try:
+        config = ModelEvaluationConfig.load(config_path)
+        workflow = ModelEvaluationWorkflow(
+            config,
+            RidgeModelConfig.load(ridge_config_path),
+            BoostedStumpsConfig.load(boosted_config_path),
+            ModelStabilityConfig.load(stability_config_path),
+        )
+    except (
+        ResearchModelEvaluationError,
+        ResearchRidgeModelError,
+        ResearchBoostedStumpsError,
+        ResearchModelStabilityError,
+    ) as error:
+        code = getattr(error, "code", "research_model_evaluation_invalid")
+        typer.echo(f"Research evaluation error [{code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research model evaluation valid: {workflow.config.workflow_id}")
+    typer.echo("Models: QR-09 ridge and QR-10 boosted stumps")
+    typer.echo("Final holdout access: disabled")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-model-stability-check")
