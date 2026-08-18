@@ -56,6 +56,12 @@ from personal_quant.research_candidate_freeze import (
     CandidateFreezeGate,
     ResearchCandidateFreezeError,
 )
+from personal_quant.research_data_readiness import (
+    DataReadinessConfig,
+    ResearchDataPackageImporter,
+    ResearchDataReadinessError,
+    write_readiness_receipt,
+)
 from personal_quant.research_experiments import (
     ExperimentRegistry,
     ResearchExperimentError,
@@ -110,6 +116,54 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-data-readiness-check")
+def research_data_readiness_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned research-data readiness policy.")
+    ] = Path("config/research/data_readiness_v1.yaml"),
+) -> None:
+    """Validate QR-15 policy without reading vendor data."""
+    try:
+        config = DataReadinessConfig.load(config_path)
+    except ResearchDataReadinessError as error:
+        typer.echo(f"Research data error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research data readiness valid: {config.policy_id}")
+    typer.echo(f"Minimum instruments: {config.minimum_instruments}")
+    typer.echo("Adjusted daily prices and exact-date membership required")
+    typer.echo("Final holdout access: disabled; consumed: NO")
+    typer.echo("Production order routing: disabled")
+
+
+@app.command("research-data-package-import")
+def research_data_package_import(
+    manifest_path: Annotated[
+        Path, typer.Option("--manifest", help="Licensed data-package manifest.")
+    ],
+    project_root: Annotated[
+        Path, typer.Option("--project-root", help="Project boundary for package files.")
+    ] = Path("."),
+    output_directory: Annotated[
+        Path, typer.Option("--output", help="Readiness receipt directory.")
+    ] = Path("research/data/readiness"),
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned readiness policy.")
+    ] = Path("config/research/data_readiness_v1.yaml"),
+) -> None:
+    """Validate an explicit package and write an immutable readiness receipt."""
+    try:
+        importer = ResearchDataPackageImporter(DataReadinessConfig.load(config_path))
+        package = importer.load(manifest_path, project_root=project_root)
+        receipt = write_readiness_receipt(package, output_directory)
+    except ResearchDataReadinessError as error:
+        typer.echo(f"Research data error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research data package: {package.status}")
+    typer.echo(f"Package SHA-256: {package.package_sha256}")
+    typer.echo(f"Receipt: {receipt}")
+    typer.echo("Final holdout access: disabled; production routing: disabled")
 
 
 @app.command("research-real-validation-check")

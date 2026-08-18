@@ -229,6 +229,10 @@ universe membership, then controls QR-08 through QR-13 execution. Validate its c
 `uv run pq research-real-validation-check`; see
 [`REAL_HISTORICAL_VALIDATION.md`](docs/REAL_HISTORICAL_VALIDATION.md).
 
+QR-15 admits only licensed, checksummed adjusted-price and point-in-time membership packages that
+meet fixed coverage requirements. Validate its policy with `uv run pq research-data-readiness-check`;
+see [`RESEARCH_DATA_READINESS.md`](docs/RESEARCH_DATA_READINESS.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
