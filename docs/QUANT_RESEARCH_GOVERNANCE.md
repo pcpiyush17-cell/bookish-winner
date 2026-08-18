@@ -64,4 +64,7 @@ QR-08 establishes the
 QR-09 adds the fixed, interpretable
 [`ridge-regression ML baseline`](RIDGE_ML_BASELINE.md).
 
+QR-10 tests bounded nonlinearity with the
+[`deterministic boosted-stumps baseline`](BOOSTED_STUMPS_BASELINE.md).
+
 No QR work changes the ongoing WP-14 evidence run.

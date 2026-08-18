@@ -47,6 +47,10 @@ from personal_quant.paper_evidence import audit_hybrid_evidence, audit_paper_evi
 from personal_quant.paper_runner import PaperRunnerError, RunnerConfig, build_operational_runner
 from personal_quant.paper_runtime import RuntimeError as PaperRuntimeError
 from personal_quant.research_benchmarks import BenchmarkSuiteConfig, ResearchBenchmarkError
+from personal_quant.research_boosted_stumps import (
+    BoostedStumpsConfig,
+    ResearchBoostedStumpsError,
+)
 from personal_quant.research_experiments import (
     ExperimentRegistry,
     ResearchExperimentError,
@@ -88,6 +92,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-boosted-stumps-check")
+def research_boosted_stumps_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned boosted-stumps configuration.")
+    ] = Path("config/research/boosted_stumps_v1.yaml"),
+) -> None:
+    """Validate QR-10 without fitting a model or changing state."""
+    try:
+        config = BoostedStumpsConfig.load(config_path)
+    except ResearchBoostedStumpsError as error:
+        typer.echo(f"Research boosted error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research boosted stumps valid: {config.model_id}")
+    typer.echo(f"Required ridge baseline: {config.required_ridge_model_id}")
+    typer.echo("Hyperparameters: fixed; tree depth: 1")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-ridge-model-check")
