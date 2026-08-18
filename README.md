@@ -224,6 +224,11 @@ QR-13 freezes a successful QR-12 candidate and its complete provenance without o
 holdout. Validate its contract with `uv run pq research-candidate-freeze-check`; see
 [`CANDIDATE_FREEZE.md`](docs/CANDIDATE_FREEZE.md).
 
+QR-14 assembles the fixed feature schema from adjusted daily multi-stock history and exact-date
+universe membership, then controls QR-08 through QR-13 execution. Validate its contract with
+`uv run pq research-real-validation-check`; see
+[`REAL_HISTORICAL_VALIDATION.md`](docs/REAL_HISTORICAL_VALIDATION.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

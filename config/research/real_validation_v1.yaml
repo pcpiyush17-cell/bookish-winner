@@ -1,0 +1,12 @@
+schema_version: 1
+runner_id: qr_real_validation_v1
+momentum_lookback_observations: 20
+reversal_lookback_observations: 5
+volatility_lookback_observations: 20
+minimum_instruments_per_observation: 20
+required_price_adjustment: corporate_action_adjusted
+required_interval: day
+universe_membership_semantics: exact_snapshot
+selection_window: validation
+final_holdout_access: false
+production_order_routing: false
