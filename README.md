@@ -220,6 +220,10 @@ QR-12 runs the fixed model pair and stability gate as one validation-only, finge
 Validate its contract with `uv run pq research-model-evaluation-check`; see
 [`MODEL_EVALUATION_WORKFLOW.md`](docs/MODEL_EVALUATION_WORKFLOW.md).
 
+QR-13 freezes a successful QR-12 candidate and its complete provenance without opening the final
+holdout. Validate its contract with `uv run pq research-candidate-freeze-check`; see
+[`CANDIDATE_FREEZE.md`](docs/CANDIDATE_FREEZE.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware

@@ -51,6 +51,11 @@ from personal_quant.research_boosted_stumps import (
     BoostedStumpsConfig,
     ResearchBoostedStumpsError,
 )
+from personal_quant.research_candidate_freeze import (
+    CandidateFreezeConfig,
+    CandidateFreezeGate,
+    ResearchCandidateFreezeError,
+)
 from personal_quant.research_experiments import (
     ExperimentRegistry,
     ResearchExperimentError,
@@ -101,6 +106,40 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-candidate-freeze-check")
+def research_candidate_freeze_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned candidate-freeze configuration.")
+    ] = Path("config/research/candidate_freeze_v1.yaml"),
+    ridge_config_path: Annotated[
+        Path, typer.Option("--ridge-config", help="Fixed QR-09 configuration.")
+    ] = Path("config/research/ridge_baseline_v1.yaml"),
+    boosted_config_path: Annotated[
+        Path, typer.Option("--boosted-config", help="Fixed QR-10 configuration.")
+    ] = Path("config/research/boosted_stumps_v1.yaml"),
+) -> None:
+    """Validate QR-13 without accessing the final holdout."""
+    try:
+        gate = CandidateFreezeGate(
+            CandidateFreezeConfig.load(config_path),
+            RidgeModelConfig.load(ridge_config_path),
+            BoostedStumpsConfig.load(boosted_config_path),
+        )
+    except (
+        ResearchCandidateFreezeError,
+        ResearchRidgeModelError,
+        ResearchBoostedStumpsError,
+    ) as error:
+        code = getattr(error, "code", "research_candidate_freeze_invalid")
+        typer.echo(f"Research freeze error [{code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research candidate freeze valid: {gate.config.freeze_id}")
+    typer.echo("Successful QR-11 decision required")
+    typer.echo("Final holdout access: disabled; consumed: NO")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-model-evaluation-check")

@@ -73,4 +73,7 @@ QR-11 holds that complexity accountable through the
 QR-12 binds the fixed models and gate into one reproducible
 [`validation-only evaluation workflow`](MODEL_EVALUATION_WORKFLOW.md).
 
+QR-13 records an immutable, drift-detectable
+[`candidate freeze and holdout-readiness dossier`](CANDIDATE_FREEZE.md).
+
 No QR work changes the ongoing WP-14 evidence run.
