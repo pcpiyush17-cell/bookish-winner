@@ -1,0 +1,25 @@
+schema_version: 1
+model_id: qr_boosted_stumps_v1
+required_dataset_id: qr_ml_dataset_v1
+required_ridge_model_id: qr_ridge_baseline_v1
+feature_names:
+  - momentum_20d
+  - reversal_5d
+  - volatility_20d
+  - dollar_volume_rank
+estimators: 20
+learning_rate: "0.10"
+minimum_leaf_samples: 25
+maximum_threshold_candidates: 32
+maximum_absolute_prediction: "0.20"
+minimum_train_samples: 500
+selection_fraction: "0.20"
+require_positive_prediction: true
+one_way_cost_bps: "10.0"
+cost_multipliers:
+  - "1.0"
+  - "1.5"
+  - "2.0"
+selection_window: validation
+fixed_hyperparameters: true
+production_order_routing: false

@@ -208,6 +208,10 @@ QR-09 adds a fixed-hyperparameter ridge-regression baseline evaluated through QR
 its contract with `uv run pq research-ridge-model-check`; see
 [`RIDGE_ML_BASELINE.md`](docs/RIDGE_ML_BASELINE.md).
 
+QR-10 adds deterministic gradient-boosted decision stumps with direct QR-09 comparison. Validate
+its contract with `uv run pq research-boosted-stumps-check`; see
+[`BOOSTED_STUMPS_BASELINE.md`](docs/BOOSTED_STUMPS_BASELINE.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
