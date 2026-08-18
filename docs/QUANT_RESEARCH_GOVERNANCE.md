@@ -67,4 +67,7 @@ QR-09 adds the fixed, interpretable
 QR-10 tests bounded nonlinearity with the
 [`deterministic boosted-stumps baseline`](BOOSTED_STUMPS_BASELINE.md).
 
+QR-11 holds that complexity accountable through the
+[`model-selection stability gate`](MODEL_STABILITY_GATE.md).
+
 No QR work changes the ongoing WP-14 evidence run.

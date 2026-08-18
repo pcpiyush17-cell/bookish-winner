@@ -65,6 +65,10 @@ from personal_quant.research_mean_reversion import (
     ResearchMeanReversionError,
 )
 from personal_quant.research_ml_dataset import MLDatasetConfig, ResearchMLDatasetError
+from personal_quant.research_model_stability import (
+    ModelStabilityConfig,
+    ResearchModelStabilityError,
+)
 from personal_quant.research_momentum import MomentumConfig, ResearchMomentumError
 from personal_quant.research_portfolio_allocation import (
     PortfolioAllocationConfig,
@@ -92,6 +96,26 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-model-stability-check")
+def research_model_stability_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned model-stability gate configuration.")
+    ] = Path("config/research/model_stability_gate_v1.yaml"),
+) -> None:
+    """Validate QR-11 without reading results or changing state."""
+    try:
+        config = ModelStabilityConfig.load(config_path)
+    except ResearchModelStabilityError as error:
+        typer.echo(f"Research stability error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research model stability gate valid: {config.gate_id}")
+    typer.echo(f"Minimum folds: {config.minimum_folds}")
+    typer.echo("Holdout access: disabled")
+    typer.echo("Selection window: validation only")
+    typer.echo("Eligible for operational promotion: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-boosted-stumps-check")

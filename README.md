@@ -212,6 +212,10 @@ QR-10 adds deterministic gradient-boosted decision stumps with direct QR-09 comp
 its contract with `uv run pq research-boosted-stumps-check`; see
 [`BOOSTED_STUMPS_BASELINE.md`](docs/BOOSTED_STUMPS_BASELINE.md).
 
+QR-11 adds a fingerprinted, fold-aware stability gate between QR-09 and QR-10. Validate its
+contract with `uv run pq research-model-stability-check`; see
+[`MODEL_STABILITY_GATE.md`](docs/MODEL_STABILITY_GATE.md).
+
 ## Analytics and features
 
 `VerifiedDataset` accepts only checksum-verified curated manifests and requires an aware
