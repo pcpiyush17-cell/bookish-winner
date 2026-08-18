@@ -84,6 +84,10 @@ from personal_quant.research_portfolio_allocation import (
     PortfolioAllocationConfig,
     ResearchPortfolioAllocationError,
 )
+from personal_quant.research_real_validation import (
+    RealValidationConfig,
+    ResearchRealValidationError,
+)
 from personal_quant.research_ridge_model import ResearchRidgeModelError, RidgeModelConfig
 from personal_quant.research_universe import (
     PointInTimeUniverseStore,
@@ -106,6 +110,25 @@ app = typer.Typer(
     help="Operate the Personal Quant Trading System.",
     no_args_is_help=True,
 )
+
+
+@app.command("research-real-validation-check")
+def research_real_validation_check(
+    config_path: Annotated[
+        Path, typer.Option("--config", help="Versioned real-validation configuration.")
+    ] = Path("config/research/real_validation_v1.yaml"),
+) -> None:
+    """Validate QR-14 without reading data or running models."""
+    try:
+        config = RealValidationConfig.load(config_path)
+    except ResearchRealValidationError as error:
+        typer.echo(f"Research real-data error [{error.code}]: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"Research real validation valid: {config.runner_id}")
+    typer.echo("Input: adjusted daily multi-stock history")
+    typer.echo("Universe: exact-date point-in-time snapshots")
+    typer.echo("Final holdout access: disabled; consumed: NO")
+    typer.echo("Production order routing: disabled")
 
 
 @app.command("research-candidate-freeze-check")

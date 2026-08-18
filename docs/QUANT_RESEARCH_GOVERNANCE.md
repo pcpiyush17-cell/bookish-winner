@@ -76,4 +76,7 @@ QR-12 binds the fixed models and gate into one reproducible
 QR-13 records an immutable, drift-detectable
 [`candidate freeze and holdout-readiness dossier`](CANDIDATE_FREEZE.md).
 
+QR-14 admits real adjusted market history through a fail-closed
+[`historical validation runner`](REAL_HISTORICAL_VALIDATION.md).
+
 No QR work changes the ongoing WP-14 evidence run.
