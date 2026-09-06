@@ -1,0 +1,13 @@
+schema_version: 1
+policy_id: qr_data_readiness_v1
+minimum_calendar_span_days: 1825
+minimum_instruments: 100
+minimum_bars_per_instrument: 756
+minimum_eligible_instruments_per_date: 100
+required_price_adjustment: corporate_action_adjusted
+required_membership_semantics: exact_snapshot
+require_delisted_securities: true
+require_local_research_license: true
+selection_window: validation
+final_holdout_access: false
+production_order_routing: false

@@ -79,4 +79,7 @@ QR-13 records an immutable, drift-detectable
 QR-14 admits real adjusted market history through a fail-closed
 [`historical validation runner`](REAL_HISTORICAL_VALIDATION.md).
 
+QR-15 verifies licensed source artifacts and coverage through the
+[`research-data readiness and import contract`](RESEARCH_DATA_READINESS.md).
+
 No QR work changes the ongoing WP-14 evidence run.
